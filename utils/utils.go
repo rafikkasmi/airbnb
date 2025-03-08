@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"encoding/base64"
 	"net/url"
 	"regexp"
 	"strings"
@@ -24,4 +25,8 @@ func ParseProxy(urlToParse, userName, password string) (*url.URL, error) {
 	}
 	urlToUse.User = url.UserPassword(userName, password)
 	return urlToUse, nil
+}
+
+func ToBase64(value string) string {
+	return base64.StdEncoding.EncodeToString([]byte(value))
 }

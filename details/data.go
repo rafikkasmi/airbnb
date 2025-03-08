@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"gobnb/trace"
@@ -55,6 +57,12 @@ func getFromRoomURL(roomURL string, proxyURL *url.URL) (Data, PriceDependencyInp
 		return Data{}, PriceDependencyInput{}, nil, trace.NewOrAdd(4, "main", "getFromRoomURL", trace.ErrStatusCode, errData)
 	}
 	data, priceDependencyInput, err := ParseBodyDetails(body)
+
+	dataUrl := roomURL
+	//remove https://www.airbnb.com/rooms/ from url
+	roomID := strings.ReplaceAll(dataUrl, "https://www.airbnb.com/rooms/", "")
+	roomIDParsed, _ := strconv.ParseInt(roomID, 10, 64)
+	data.RoomID = roomIDParsed
 	if err != nil {
 		return Data{}, PriceDependencyInput{}, nil, trace.NewOrAdd(5, "main", "getFromRoomURL", err, "")
 	}

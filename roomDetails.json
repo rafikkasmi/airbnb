@@ -1,0 +1,402 @@
+{
+    "Title": "Modern studio near the airport",
+    "URL": "https://www.airbnb.com/rooms/1146375254982340258",
+    "RoomType": "Entire home/apt",
+    "Language": "",
+    "HomeTier": 1,
+    "PersonCapacity": 2,
+    "IsSuperHost": true,
+    "Price": {
+      "Amount": 0,
+      "CurrencySymbol": "",
+      "Qualifier": ""
+    },
+    "Rating": {
+      "Accuracy": 4.88,
+      "Checking": 4.9,
+      "CleaningLiness": 4.92,
+      "Comunication": 4.98,
+      "Location": 4.65,
+      "Value": 4.65,
+      "GuestSatisfaction": 4.93,
+      "ReviewCount": 121
+    },
+    "Coordinates": {
+      "Latitude": 31.601088001708526,
+      "Longitud": -8.034730441868305
+    },
+    "Host": {
+      "ID": "483034639",
+      "Name": "Hosted by Saad",
+      "JoinedOn": "",
+      "Description": ""
+    },
+    "CoHosts": null,
+    "SubDescription": {
+      "Title": "Entire rental unit in Marrakesh, Morocco",
+      "Items": [
+        "2 guests",
+        "1 bedroom",
+        "2 beds",
+        "1 bath"
+      ]
+    },
+    "Description": "Welcome to Marrakech🌴! Our studio, just 3 min from the airport by taxi, is perfect for your late arrival or early check-out. \u003cbr /\u003e\u003cbr /\u003eNestled in a peaceful neighborhood, you can relax after a long trip, while being 20 minutes from the bustling heart of Marrakech. \u003cbr /\u003e\u003cbr /\u003eWith flexible check-in from 2pm, no need to stress because of flight schedules! Enjoy the tranquility of Marrakech in a modern and warm setting\u003cbr /\u003e\u003cbr /\u003e\u003cb\u003eThe space\u003c/b\u003e\u003cbr /\u003e🏠 Welcome to our studio in Marrakech! 🏠\u003cbr /\u003e\u003cbr /\u003eNestled in a peaceful and secure neighborhood, our studio is the perfect getaway for travelers looking for comfort and convenience. Here's what you can expect during your stay:\u003cbr /\u003e\u003cbr /\u003e🛌 Spacious room: Our cozy room includes two beds and two L-shaped sofas, offering ample space to relax. You will also find a TV for your moments of entertainment.\u003cbr /\u003e\u003cbr /\u003eWell-equipped 🍽️ kitchenette: Prepare your favorite meals in our fully equipped kitchenette. Whether you're making a quick breakfast or cooking a Moroccan feast, you'll find everything you need at your fingertips.\u003cbr /\u003e\u003cbr /\u003eModern 🚿 bathroom: Relax and cool off in our modern bathroom, equipped with a refreshing shower and quality amenities.\u003cbr /\u003e\u003cbr /\u003eFree 📶 WiFi: Stay connected with our free WiFi, available throughout the studio for you to work, browse the internet, or stay connected with friends and family.\u003cbr /\u003e\u003cbr /\u003eFree 🅿️ parking: Park your vehicle with peace of mind with our free onsite parking, offering extra convenience for guests with their own vehicle.\u003cbr /\u003e\u003cbr /\u003eFlexible 🔑 check-in: Our flexible check-in from 2pm gives you the freedom to check in at any time of day, making it the ideal solution for late arrivals or for guests looking to check in early.\u003cbr /\u003e\u003cbr /\u003eBook now and discover everything our studio has to offer during your upcoming stay in Marrakech\u003cbr /\u003e\u003cbr /\u003e\u003cb\u003eGuest access\u003c/b\u003e\u003cbr /\u003eI want to be on site to welcome you and give tips to help you\u003cbr /\u003e\u003cbr /\u003e\u003cb\u003eOther things to note\u003c/b\u003e\u003cbr /\u003e🔍 Other important details 🔍\u003cbr /\u003e\u003cbr /\u003eWe are delighted to host you in our studio in Marrakech for a memorable experience. We would like to respectfully inform you that, according to local law, unmarried Moroccan couples cannot be accepted into our property, as is the case in all hotels in the country. We appreciate your understanding in this regard.\u003cbr /\u003e\u003cbr /\u003eIf you have any questions or concerns about this policy please do not hesitate to contact us. We are here to help you plan a comfortable and enjoyable stay in Marrakech",
+    "Highlights": [
+      {
+        "Title": "Great check-in experience",
+        "Subtitle": "Recent guests loved the smooth start to this stay.",
+        "Icon": "SYSTEM_KEY"
+      },
+      {
+        "Title": "Saad is a Superhost",
+        "Subtitle": "Superhosts are experienced, highly rated Hosts.",
+        "Icon": "SYSTEM_SUPERHOST"
+      },
+      {
+        "Title": "Furry friends welcome",
+        "Subtitle": "Bring your pets along for the stay.",
+        "Icon": "SYSTEM_PETS"
+      }
+    ],
+    "Amenities": [
+      {
+        "Title": "Bathroom",
+        "Values": [
+          {
+            "Title": "Hair dryer",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_HAIRDRYER"
+          },
+          {
+            "Title": "Cleaning products",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_CLEANING_SUPPLIES"
+          },
+          {
+            "Title": "Shampoo",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_SHAMPOO"
+          },
+          {
+            "Title": "Body soap",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_SOAP"
+          },
+          {
+            "Title": "Bidet",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_TOILET_BIDET"
+          },
+          {
+            "Title": "Outdoor shower",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_SHOWER"
+          },
+          {
+            "Title": "Hot water",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_HOT_WATER"
+          },
+          {
+            "Title": "Shower gel",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_SOAP"
+          }
+        ]
+      },
+      {
+        "Title": "Bedroom and laundry",
+        "Values": [
+          {
+            "Title": "Washer",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_WASHER"
+          },
+          {
+            "Title": "Bed linens",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_BLANKETS"
+          },
+          {
+            "Title": "Iron",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_IRON"
+          }
+        ]
+      },
+      {
+        "Title": "Entertainment",
+        "Values": [
+          {
+            "Title": "TV",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_TV"
+          }
+        ]
+      },
+      {
+        "Title": "Internet and office",
+        "Values": [
+          {
+            "Title": "Wifi",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_WI_FI"
+          },
+          {
+            "Title": "Dedicated workspace",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_WORKSPACE"
+          }
+        ]
+      },
+      {
+        "Title": "Kitchen and dining",
+        "Values": [
+          {
+            "Title": "Kitchen",
+            "Subtitle": "Space where guests can cook their own meals",
+            "Available": true,
+            "Icon": "SYSTEM_COOKING_BASICS"
+          },
+          {
+            "Title": "Microwave",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_MICROWAVE"
+          },
+          {
+            "Title": "Cooking basics",
+            "Subtitle": "Pots and pans, oil, salt and pepper",
+            "Available": true,
+            "Icon": "SYSTEM_COOKING_BASICS"
+          },
+          {
+            "Title": "Dishes and silverware",
+            "Subtitle": "Bowls, chopsticks, plates, cups, etc.",
+            "Available": true,
+            "Icon": "SYSTEM_DISHES_AND_SILVERWARE"
+          },
+          {
+            "Title": "Freezer",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_REFRIGERATOR"
+          },
+          {
+            "Title": "Other stove",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_STOVE"
+          },
+          {
+            "Title": "Trash compactor",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_TRASH"
+          },
+          {
+            "Title": "Dining table",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_DINING_TABLE"
+          },
+          {
+            "Title": "Coffee",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_COFFEE_MAKER"
+          }
+        ]
+      },
+      {
+        "Title": "Location features",
+        "Values": [
+          {
+            "Title": "Private entrance",
+            "Subtitle": "Separate street or building entrance",
+            "Available": true,
+            "Icon": "SYSTEM_DOOR"
+          }
+        ]
+      },
+      {
+        "Title": "Parking and facilities",
+        "Values": [
+          {
+            "Title": "Free parking on premises",
+            "Subtitle": "",
+            "Available": true,
+            "Icon": "SYSTEM_MAPS_CAR_RENTAL"
+          }
+        ]
+      },
+      {
+        "Title": "Services",
+        "Values": [
+          {
+            "Title": "Pets allowed",
+            "Subtitle": "Assistance animals are always allowed",
+            "Available": true,
+            "Icon": "SYSTEM_PETS"
+          },
+          {
+            "Title": "Long term stays allowed",
+            "Subtitle": "Allow stay for 28 days or more",
+            "Available": true,
+            "Icon": "SYSTEM_CALENDAR"
+          }
+        ]
+      },
+      {
+        "Title": "Not included",
+        "Values": [
+          {
+            "Title": "Exterior security cameras on property",
+            "Subtitle": "",
+            "Available": false,
+            "Icon": "SYSTEM_NO_SURVEILLANCE"
+          },
+          {
+            "Title": "Dryer",
+            "Subtitle": "",
+            "Available": false,
+            "Icon": "SYSTEM_NO_DRYER"
+          },
+          {
+            "Title": "Air conditioning",
+            "Subtitle": "",
+            "Available": false,
+            "Icon": "SYSTEM_NO_AIR_CONDITIONING"
+          },
+          {
+            "Title": "Essentials",
+            "Subtitle": "",
+            "Available": false,
+            "Icon": "SYSTEM_NO_ESSENTIALS"
+          },
+          {
+            "Title": "Smoke alarm",
+            "Subtitle": "This place may not have a smoke detector. Reach out to the host with any questions.",
+            "Available": false,
+            "Icon": "SYSTEM_NO_DETECTOR_SMOKE"
+          },
+          {
+            "Title": "Carbon monoxide alarm",
+            "Subtitle": "This place may not have a carbon monoxide detector. Reach out to the host with any questions.",
+            "Available": false,
+            "Icon": "SYSTEM_NO_DETECTOR_CO2"
+          },
+          {
+            "Title": "Heating",
+            "Subtitle": "",
+            "Available": false,
+            "Icon": "SYSTEM_NO_HEATER"
+          }
+        ]
+      }
+    ],
+    "HouseRules": {
+      "Aditional": "– Marriage certificate required for Moroccan couples.\n\n– Contact us before bringing extra guests.\n\n– No smoking in the house\n\n– Hours of silence start at 10pm.\n\n– A short-term rental agreement needs to be signed by the guest during the check-in process",
+      "General": [
+        {
+          "Title": "Checking in and out",
+          "Values": [
+            {
+              "Title": "Check-in after 2:00 PM",
+              "Icon": "SYSTEM_CLOCK"
+            },
+            {
+              "Title": "Checkout before 12:00 PM",
+              "Icon": "SYSTEM_CLOCK"
+            }
+          ]
+        },
+        {
+          "Title": "During your stay",
+          "Values": [
+            {
+              "Title": "2 guests maximum",
+              "Icon": "SYSTEM_FAMILY"
+            },
+            {
+              "Title": "Pets allowed",
+              "Icon": "SYSTEM_PETS"
+            }
+          ]
+        }
+      ]
+    },
+    "LocationDescriptions": null,
+    "Images": [
+      {
+        "Title": "Living room image 1",
+        "URL": "https://a0.muscache.com/im/pictures/hosting/Hosting-1146375254982340258/original/21219f2f-d14d-40c0-a3b9-f773ebb2ac1e.jpeg",
+        "ContentType": "",
+        "Extension": ".jpeg"
+      },
+      {
+        "Title": "Full kitchen image 1",
+        "URL": "https://a0.muscache.com/im/pictures/hosting/Hosting-1146375254982340258/original/de09ebf3-9740-464e-a789-08ca9cb5b6b9.jpeg",
+        "ContentType": "",
+        "Extension": ".jpeg"
+      },
+      {
+        "Title": "Bedroom image 1",
+        "URL": "https://a0.muscache.com/im/pictures/hosting/Hosting-1146375254982340258/original/5b34714a-0b31-4025-a0b2-a5aaab47c9bb.jpeg",
+        "ContentType": "",
+        "Extension": ".jpeg"
+      },
+      {
+        "Title": "Bedroom image 2",
+        "URL": "https://a0.muscache.com/im/pictures/hosting/Hosting-1146375254982340258/original/f71d403d-bc42-486a-b146-53682e43cd99.jpeg",
+        "ContentType": "",
+        "Extension": ".jpeg"
+      },
+      {
+        "Title": "Full bathroom image 1",
+        "URL": "https://a0.muscache.com/im/pictures/hosting/Hosting-1146375254982340258/original/6ec0a506-d584-4c41-9a6e-f1aa244491f1.jpeg",
+        "ContentType": "",
+        "Extension": ".jpeg"
+      },
+      {
+        "Title": "Full bathroom image 2",
+        "URL": "https://a0.muscache.com/im/pictures/hosting/Hosting-1146375254982340258/original/d4856f68-a903-4a90-a251-5be729db014d.jpeg",
+        "ContentType": "",
+        "Extension": ".jpeg"
+      },
+      {
+        "Title": "Additional photos image 1",
+        "URL": "https://a0.muscache.com/im/pictures/hosting/Hosting-1146375254982340258/original/62071093-30b4-45aa-b135-a6699057c664.png",
+        "ContentType": "",
+        "Extension": ".png"
+      }
+    ],
+    "minimum_nights": 0,
+    "maximum_nights": 0,
+    "minimum_minimum_nights": 0,
+    "maximum_minimum_nights": 0,
+    "minimum_maximum_nights": 0,
+    "maximum_maximum_nights": 0,
+    "minimum_nights_avg_ntm": 0,
+    "maximum_nights_avg_ntm": 0,
+    "calendar_updated": "",
+    "has_availability": false,
+    "availability_30": 0,
+    "availability_60": 0,
+    "availability_90": 0
+  }

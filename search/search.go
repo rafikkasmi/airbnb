@@ -2,8 +2,8 @@ package search
 
 import (
 	"bytes"
-	"encoding/json"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -35,7 +35,7 @@ func (input InputData) SearchAll(currency string, proxyURL *url.URL) ([]Data, er
 	var allResults []Data
 	// var cursor string
 
-	for i:=0;i<100;i++ {
+	for i := 0; i < 20; i++ {
 		cursor, err1 := GenerateCursor(i)
 		if err1 != nil {
 			errData := trace.NewOrAdd(2, "search", "SearchAll", err1, "")
@@ -211,6 +211,6 @@ func GenerateCursor(x int) (string, error) {
 
 	// Encode the JSON to base64
 	encodedCursor := base64.StdEncoding.EncodeToString(jsonData)
-	
+
 	return encodedCursor, nil
 }

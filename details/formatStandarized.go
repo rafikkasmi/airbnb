@@ -1,25 +1,41 @@
 package details
 
 type Data struct {
-	Title                string
-	URL                  string
-	RoomType             string
-	Language             string
-	HomeTier             int
-	PersonCapacity       int
-	IsSuperHost          bool
-	Price                Price
-	Rating               Rating
-	Coordinates          Coordinates
-	Host                 Host
-	CoHosts              []Cohost
-	SubDescription       SubDescription
-	Description          string
-	Highlights           []Highlight
-	Amenities            []AmenityGroup
-	HouseRules           HouseRules
-	LocationDescriptions []LocationDetail
-	Images               []Img
+	RoomID               int64            `csv:"RoomID"`
+	Title                string           `csv:"Title"`
+	URL                  string           `csv:"URL"`
+	RoomType             string           `csv:"RoomType"`
+	Language             string           `csv:"Language"`
+	HomeTier             int              `csv:"HomeTier"`
+	PersonCapacity       int              `csv:"PersonCapacity"`
+	IsSuperHost          bool             `csv:"IsSuperHost"`
+	Price                Price            `csv:"Price"`
+	Rating               Rating           `csv:"Rating"`
+	Coordinates          Coordinates      `csv:"Coordinates"`
+	Host                 Host             `csv:"Host"`
+	CoHosts              []Cohost         `csv:"CoHosts"`
+	SubDescription       SubDescription   `csv:"SubDescription"`
+	Description          string           `csv:"Description"`
+	Highlights           []Highlight      `csv:"Highlights"`
+	Amenities            []AmenityGroup   `csv:"Amenities"`
+	HouseRules           HouseRules       `csv:"HouseRules"`
+	LocationDescriptions []LocationDetail `csv:"LocationDescriptions"`
+	Images               []Img            `csv:"Images"`
+
+	// // Availability and night-related fields
+	// MinimumNights        int    `json:"minimum_nights"`
+	// MaximumNights        int    `json:"maximum_nights"`
+	// MinimumMinimumNights int    `json:"minimum_minimum_nights"`
+	// MaximumMinimumNights int    `json:"maximum_minimum_nights"`
+	// MinimumMaximumNights int    `json:"minimum_maximum_nights"`
+	// MaximumMaximumNights int    `json:"maximum_maximum_nights"`
+	// MinimumNightsAvgNtm  int    `json:"minimum_nights_avg_ntm"`
+	// MaximumNightsAvgNtm  int    `json:"maximum_nights_avg_ntm"`
+	// CalendarUpdated      string `json:"calendar_updated"`
+	// HasAvailability      bool   `json:"has_availability"`
+	// Availability30       int    `json:"availability_30"`
+	// Availability60       int    `json:"availability_60"`
+	// Availability90       int    `json:"availability_90"`
 }
 type Price struct {
 	Amount         float32
