@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
+	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,14 +15,65 @@ import (
 	"gobnb/availability"
 	"gobnb/reviews"
 	"gobnb/search"
-	// "github.com/johnbalvin/gobnb/utils"
-	// "github.com/johnbalvin/gobnb/details"
+	"gobnb/utils"
 )
 
 var client gobnb.Client
+var proxyRotator *utils.ProxyRotator
+
+// loadProxies loads proxy URLs from a file
+func loadProxies(filePath string) ([]string, error) {
+	// Check if the file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		log.Printf("Proxy file %s does not exist, continuing without proxies", filePath)
+		return nil, nil
+	}
+
+	// Read the file
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading proxy file: %w", err)
+	}
+
+	// Split by newlines and filter empty lines
+	var proxies []string
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") {
+			proxies = append(proxies, line)
+		}
+	}
+
+	return proxies, nil
+}
 
 func main() {
+	// Initialize random seed for consistent randomization
+	rand.Seed(time.Now().UnixNano())
+	
+	// Load proxies from file
+	proxyFilePath := "./proxies.txt"
+	proxyURLs, err := loadProxies(proxyFilePath)
+	if err != nil {
+		log.Printf("Warning: Failed to load proxies: %v", err)
+	}
+
+	// Initialize proxy rotator
+	if len(proxyURLs) > 0 {
+		proxyRotator, err = utils.NewProxyRotator(proxyURLs)
+		if err != nil {
+			log.Printf("Warning: Failed to initialize proxy rotator: %v", err)
+		} else {
+			log.Printf("Successfully loaded %d proxies", proxyRotator.Count())
+		}
+	} else {
+		log.Println("No proxies loaded, requests will use direct connection")
+	}
+
+	// Initialize client with default settings
 	client = gobnb.DefaultClient()
+
 	// Uncomment one of these function calls to run different examples
 
 	// Example 1: Search for rooms
@@ -131,13 +185,22 @@ func searchForRooms() {
 			checkIn := search.Check{}
 			coords := search.CoordinatesInput{}
 
+			// Get a proxy for this request
+			var proxy *url.URL
+			if proxyRotator != nil {
+				proxy = proxyRotator.GetNextProxy()
+				if proxy != nil {
+					log.Printf("Using proxy %s for search in %s", proxy.String(), cityName)
+				}
+			}
+
 			// Perform the search
 			results, err := search.InputData{
 				Coordinates: coords,
 				Check:       checkIn,
 				ZoomValue:   zoomvalue,
 				Query:       cityName,
-			}.SearchAll("USD", nil)
+			}.SearchAll("USD", proxy)
 
 			// Send the results back through the channel
 			citiesResultsChan <- citySearchResult{
@@ -208,8 +271,8 @@ func searchForRooms() {
 		err     error
 	}
 
-	// Set up a worker pool with a maximum of 10 concurrent requests
-	maxConcurrent := 10
+	// Set up a worker pool with a limited number of concurrent requests to avoid rate limiting
+	maxConcurrent := 5 // Reduced from 10 to 5 to avoid hitting rate limits
 	semaphore := make(chan struct{}, maxConcurrent)
 	resultsChan := make(chan roomDetailResult)
 
@@ -234,8 +297,10 @@ func searchForRooms() {
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
-			// Add a small random delay to avoid all requests hitting at once
-			time.Sleep(time.Duration(id%100) * time.Millisecond)
+			// Add a substantial random delay to avoid all requests hitting at once
+			baseDelay := 500 // 500ms base delay
+			randomJitter := rand.Intn(1000) // 0-1000ms random jitter
+			time.Sleep(time.Duration(baseDelay+randomJitter) * time.Millisecond)
 
 			// Create output directory for this room
 			folderPath := fmt.Sprintf("./output/%d", id)
@@ -243,8 +308,20 @@ func searchForRooms() {
 				log.Printf("Error creating directory for room %d: %v", id, err)
 			}
 
+			// Get a proxy for this request
+			var proxy *url.URL
+			if proxyRotator != nil {
+				proxy = proxyRotator.GetNextProxy()
+				if proxy != nil {
+					log.Printf("Using proxy %s for room details %d", proxy.String(), id)
+				}
+			}
+
+			// Create a client with the proxy
+			localClient := gobnb.NewClient("USD", proxy)
+
 			// Get room details
-			roomDetails, err := client.DetailsFromRoomID(id)
+			roomDetails, err := localClient.DetailsFromRoomID(id)
 
 			// Asynchronously fetch reviews and availability data
 			var reviewsWg sync.WaitGroup
@@ -256,9 +333,12 @@ func searchForRooms() {
 				fetchReviewsForRoom(id, folderPath)
 			}()
 
-			// Fetch availability asynchronously
+			// Fetch availability asynchronously with a delay to prevent rate limiting
 			go func() {
 				defer reviewsWg.Done()
+				// Add a delay before fetching availability to separate it from the reviews request
+				delayBeforeAvailability := 2000 + rand.Intn(3000) // 2-5 second delay
+				time.Sleep(time.Duration(delayBeforeAvailability) * time.Millisecond)
 				fetchAvailabilityForRoom(id, folderPath)
 			}()
 
@@ -519,10 +599,19 @@ func truncateString(s string, maxLen int) string {
 func fetchReviewsForRoom(roomID int64, folderPath string) {
 	fmt.Printf("Fetching reviews for room ID: %d\n", roomID)
 
+	// Get a proxy for this request
+	var proxy *url.URL
+	if proxyRotator != nil {
+		proxy = proxyRotator.GetNextProxy()
+		if proxy != nil {
+			log.Printf("Using proxy %s for reviews of room %d", proxy.String(), roomID)
+		}
+	}
+
 	// Fetch reviews for the room
 	reviewData, err := reviews.InputData{
 		RoomId: roomID,
-	}.GetAllReviewsOfRoom(roomID, "USD", nil)
+	}.GetAllReviewsOfRoom(roomID, "USD", proxy)
 	if err != nil {
 		log.Printf("Error fetching reviews for room %d: %v\n", roomID, err)
 		return
@@ -544,12 +633,28 @@ func fetchReviewsForRoom(roomID int64, folderPath string) {
 func fetchAvailabilityForRoom(roomID int64, folderPath string) {
 	fmt.Printf("Fetching availability for room ID: %d\n", roomID)
 
+	// Add a random delay before making the request to avoid rate limiting
+	// This helps distribute requests over time
+	minDelay := 1000 // 1 second minimum delay
+	maxDelay := 3000 // 3 seconds maximum delay
+	randomDelay := minDelay + rand.Intn(maxDelay-minDelay)
+	time.Sleep(time.Duration(randomDelay) * time.Millisecond)
+
+	// Get a proxy for this request
+	var proxy *url.URL
+	if proxyRotator != nil {
+		proxy = proxyRotator.GetNextProxy()
+		if proxy != nil {
+			log.Printf("Using proxy %s for availability of room %d", proxy.String(), roomID)
+		}
+	}
+
 	// Fetch availability data for the room
 	_, daysData, err := availability.InputData{
 		RoomId:     roomID,
 		StartMonth: 3,
 		StartYear:  2025,
-	}.GetAvailabilityCalendar("USD", nil)
+	}.GetAvailabilityCalendar("USD", proxy)
 	if err != nil {
 		log.Printf("Error fetching availability for room %d: %v\n", roomID, err)
 		return

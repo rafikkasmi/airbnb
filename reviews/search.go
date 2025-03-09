@@ -24,7 +24,7 @@ func (input InputData) GetAllReviewsOfRoom(roomId int64, currency string, proxyU
 	}
 	var allResults []Review
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 8; i++ {
 		resultsRaw, err := input.search(i, currency, apiKey, proxyURL)
 		if err != nil {
 			errData := trace.NewOrAdd(2, "search", "SearchAll", err, "")

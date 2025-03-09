@@ -69,41 +69,41 @@ func searchForRooms() {
 		"Agafay, Marrakesh",
 		"Bab Ghmat, Marrakesh",
 		//neighboorhoods
-		"Arset El Baraka, Marrakesh",
-		"Arset Moulay Bouaza, Marrakesh",
-		"Djane Ben Chogra, Marrakesh",
-		"Arset El Houta, Marrakesh",
-		"Bab Aylan, Marrakesh",
-		"Arset Sidi Youssef, Marrakesh",
-		"Derb Chtouka, Marrakesh",
-		"Bab Hmar, Marrakesh",
-		"Bab Agnaou, Marrakesh",
-		"Quartier Jnan Laafia, Marrakesh",
-		"Toureg, Marrakesh",
-		"Kasbah, Marrakesh",
-		"Mellah, Marrakesh",
-		"Arset El Maach, Marrakesh",
-		"Arset Moulay Moussa, Marrakesh",
-		"Riad Zitoun Jdid, Marrakesh",
-		"Kennaria, Marrakesh",
-		"Rahba Kedima, Marrakesh",
-		"Kaat Benahid, Marrakesh",
-		"Zaouiat Lahdar, Marrakesh",
-		"El Moukef, Marrakesh",
-		"Riad Laarous, Marrakesh",
-		"Assouel, Marrakesh",
-		"Kechich, Marrakesh",
-		"Douar Fekhara, Marrakesh",
-		"Arset Tihiri, Marrakesh",
-		"Sidi Ben Slimane El Jazouli, Marrakesh",
-		"Diour Jdad, Marrakesh",
-		"Rmila, Marrakesh",
-		"Zaouia Sidi Rhalem, Marrakesh",
-		"Kbour Chou, Marrakesh",
-		"Ain Itti, Marrakesh",
-		"Bab Doukkala, Marrakesh",
-		"El Hara, Marrakesh",
-		"Arset El Bilk, Marrakesh",
+		// "Arset El Baraka, Marrakesh",
+		// "Arset Moulay Bouaza, Marrakesh",
+		// "Djane Ben Chogra, Marrakesh",
+		// "Arset El Houta, Marrakesh",
+		// "Bab Aylan, Marrakesh",
+		// "Arset Sidi Youssef, Marrakesh",
+		// "Derb Chtouka, Marrakesh",
+		// "Bab Hmar, Marrakesh",
+		// "Bab Agnaou, Marrakesh",
+		// "Quartier Jnan Laafia, Marrakesh",
+		// "Toureg, Marrakesh",
+		// "Kasbah, Marrakesh",
+		// "Mellah, Marrakesh",
+		// "Arset El Maach, Marrakesh",
+		// "Arset Moulay Moussa, Marrakesh",
+		// "Riad Zitoun Jdid, Marrakesh",
+		// "Kennaria, Marrakesh",
+		// "Rahba Kedima, Marrakesh",
+		// "Kaat Benahid, Marrakesh",
+		// "Zaouiat Lahdar, Marrakesh",
+		// "El Moukef, Marrakesh",
+		// "Riad Laarous, Marrakesh",
+		// "Assouel, Marrakesh",
+		// "Kechich, Marrakesh",
+		// "Douar Fekhara, Marrakesh",
+		// "Arset Tihiri, Marrakesh",
+		// "Sidi Ben Slimane El Jazouli, Marrakesh",
+		// "Diour Jdad, Marrakesh",
+		// "Rmila, Marrakesh",
+		// "Zaouia Sidi Rhalem, Marrakesh",
+		// "Kbour Chou, Marrakesh",
+		// "Ain Itti, Marrakesh",
+		// "Bab Doukkala, Marrakesh",
+		// "El Hara, Marrakesh",
+		// "Arset El Bilk, Marrakesh",
 	}
 
 	fmt.Printf("Starting asynchronous search for rooms in %d cities...\n", len(Cities))
@@ -212,7 +212,7 @@ func searchForRooms() {
 	}
 
 	// Set up a worker pool with a maximum of 10 concurrent requests
-	maxConcurrent := 10
+	maxConcurrent := 50
 	semaphore := make(chan struct{}, maxConcurrent)
 	resultsChan := make(chan roomDetailResult)
 
@@ -249,21 +249,21 @@ func searchForRooms() {
 			// Get room details
 			roomDetails, err := client.DetailsFromRoomID(id)
 
-			// Asynchronously fetch reviews and availability data
-			var reviewsWg sync.WaitGroup
-			reviewsWg.Add(2) // One for reviews, one for availability
+			// // Asynchronously fetch reviews and availability data
+			// var reviewsWg sync.WaitGroup
+			// reviewsWg.Add(2) // One for reviews, one for availability
 
-			// Fetch reviews asynchronously
-			go func() {
-				defer reviewsWg.Done()
-				fetchReviewsForRoom(id, folderPath)
-			}()
+			// // Fetch reviews asynchronously
+			// go func() {
+			// 	defer reviewsWg.Done()
+			// 	fetchReviewsForRoom(id, folderPath)
+			// }()
 
-			// Fetch availability asynchronously
-			go func() {
-				defer reviewsWg.Done()
-				fetchAvailabilityForRoom(id, folderPath)
-			}()
+			// // Fetch availability asynchronously
+			// go func() {
+			// 	defer reviewsWg.Done()
+			// 	fetchAvailabilityForRoom(id, folderPath)
+			// }()
 
 			// Don't wait for reviews and availability to complete
 			// They will finish in the background

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"time"
@@ -89,56 +90,114 @@ func (input InputData) search(currency, apiKey string, proxyURL *url.URL) (root,
 	urlParsed.RawQuery = query.Encode()
 	urlToUse := urlParsed.String()
 
-	req, err := http.NewRequest("GET", urlToUse, nil)
-	if err != nil {
-		return root{}, trace.NewOrAdd(3, "availability", "search", err, "")
-	}
-	req.Header.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
-	req.Header.Add("Accept-Language", "en")
-	req.Header.Add("Cache-Control", "no-cache")
-	req.Header.Add("Pragma", "no-cache")
-	req.Header.Add("Sec-Ch-Ua", `"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"`)
-	req.Header.Add("Sec-Ch-Ua-Mobile", "?0")
-	req.Header.Add("X-Airbnb-Api-Key", apiKey)
-	req.Header.Add("Sec-Ch-Ua-Platform", `"Windows"`)
-	req.Header.Add("Sec-Fetch-Dest", "document")
-	req.Header.Add("Sec-Fetch-Mode", "navigate")
-	req.Header.Add("Sec-Fetch-Site", "none")
-	req.Header.Add("Sec-Fetch-User", "?1")
-	req.Header.Add("Upgrade-Insecure-Requests", "1")
-	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-	transport := &http.Transport{
-		MaxIdleConnsPerHost: 30,
-		DisableKeepAlives:   true,
-	}
-	if proxyURL != nil {
-		transport.Proxy = http.ProxyURL(proxyURL)
-	}
-	client := &http.Client{
-		Timeout: time.Minute,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-		Transport: transport,
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return root{}, trace.NewOrAdd(4, "availability", "search", err, "")
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return root{}, trace.NewOrAdd(5, "availability", "search", err, "")
-	}
-	if resp.StatusCode != 200 {
-		errData := fmt.Sprintf("status: %d headers: %+v", resp.StatusCode, resp.Header)
-		return root{}, trace.NewOrAdd(6, "availability", "search", trace.ErrStatusCode, errData)
-	}
-	body = utils.RemoveSpaceByte(body) //some values are returned with weird empty values
+	// Retry configuration
+	maxRetries := 5
+	var lastErr error
 	var data root
-	if err := json.Unmarshal(body, &data); err != nil {
-		return root{}, trace.NewOrAdd(7, "availability", "search", err, "")
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		// Add a delay before each retry (except the first attempt)
+		if attempt > 0 {
+			// Exponential backoff with jitter
+			// Base delay: 2^attempt seconds + random jitter (0-1000ms)
+			backoffTime := time.Duration(1<<uint(attempt)) * time.Second
+			jitter := time.Duration(rand.Intn(1000)) * time.Millisecond
+			delay := backoffTime + jitter
+
+			log.Printf("Rate limit encountered. Retrying in %v (attempt %d/%d)...", delay, attempt+1, maxRetries)
+			time.Sleep(delay)
+		}
+
+		req, err := http.NewRequest("GET", urlToUse, nil)
+		if err != nil {
+			lastErr = trace.NewOrAdd(3, "availability", "search", err, "")
+			continue
+		}
+		req.Header.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+		req.Header.Add("Accept-Language", "en")
+		req.Header.Add("Cache-Control", "no-cache")
+		req.Header.Add("Pragma", "no-cache")
+		req.Header.Add("Sec-Ch-Ua", `"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"`)
+		req.Header.Add("Sec-Ch-Ua-Mobile", "?0")
+		req.Header.Add("X-Airbnb-Api-Key", apiKey)
+		req.Header.Add("Sec-Ch-Ua-Platform", `"Windows"`)
+		req.Header.Add("Sec-Fetch-Dest", "document")
+		req.Header.Add("Sec-Fetch-Mode", "navigate")
+		req.Header.Add("Sec-Fetch-Site", "none")
+		req.Header.Add("Sec-Fetch-User", "?1")
+		req.Header.Add("Upgrade-Insecure-Requests", "1")
+		req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+
+		// Vary the user agent slightly to appear more human-like
+		if attempt > 0 {
+			userAgents := []string{
+				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+				"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15",
+			}
+			req.Header.Set("User-Agent", userAgents[rand.Intn(len(userAgents))])
+		}
+
+		transport := &http.Transport{
+			MaxIdleConnsPerHost: 30,
+			DisableKeepAlives:   true,
+		}
+		if proxyURL != nil {
+			transport.Proxy = http.ProxyURL(proxyURL)
+		}
+		client := &http.Client{
+			Timeout: time.Minute,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+			Transport: transport,
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = trace.NewOrAdd(4, "availability", "search", err, "")
+			continue
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close() // Always close the body
+
+		if err != nil {
+			lastErr = trace.NewOrAdd(5, "availability", "search", err, "")
+			continue
+		}
+
+		// Check for rate limiting (429)
+		if resp.StatusCode == 429 {
+			errData := fmt.Sprintf("status: %d headers: %+v", resp.StatusCode, resp.Header)
+			lastErr = trace.NewOrAdd(6, "availability", "search", trace.ErrStatusCode, errData)
+			// Continue to retry
+			continue
+		}
+
+		// Check for other errors
+		if resp.StatusCode != 200 {
+			errData := fmt.Sprintf("status: %d headers: %+v", resp.StatusCode, resp.Header)
+			lastErr = trace.NewOrAdd(6, "availability", "search", trace.ErrStatusCode, errData)
+			// If it's not a rate limit error, we might want to break here depending on the status code
+			// For now, we'll retry all non-200 responses
+			continue
+		}
+
+		body = utils.RemoveSpaceByte(body) //some values are returned with weird empty values
+
+		if err := json.Unmarshal(body, &data); err != nil {
+			lastErr = trace.NewOrAdd(7, "availability", "search", err, "")
+			continue
+		}
+
+		// If we got here, we succeeded
+		return data, nil
 	}
-	return data, nil
+
+	// If we exhausted all retries, return the last error
+	return root{}, lastErr
 }
 
 // CursorData represents the structure to be encoded as base64
