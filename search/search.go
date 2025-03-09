@@ -19,7 +19,8 @@ import (
 func (input InputData) SearchFirstPage(currency string, proxyURL *url.URL) ([]Data, error) {
 	apiKey, err := api.Get(proxyURL)
 	if err != nil {
-		return nil, trace.NewOrAdd(1, "search", "SearchFirstPage", err, "")
+		// return nil, trace.NewOrAdd(1, "search", "SearchFirstPage", err, "")
+		apiKey = "d306zoyjsyarp7ifhu67rjxn52tv0t20"
 	}
 	result, err := input.search("", currency, apiKey, proxyURL)
 	if err != nil {
@@ -30,7 +31,8 @@ func (input InputData) SearchFirstPage(currency string, proxyURL *url.URL) ([]Da
 func (input InputData) SearchAll(currency string, proxyURL *url.URL) ([]Data, error) {
 	apiKey, err := api.Get(proxyURL)
 	if err != nil {
-		return nil, trace.NewOrAdd(1, "search", "SearchAll", err, "")
+		// return nil, trace.NewOrAdd(1, "search", "SearchAll", err, "")
+		apiKey = "d306zoyjsyarp7ifhu67rjxn52tv0t20"
 	}
 	var allResults []Data
 	// var cursor string

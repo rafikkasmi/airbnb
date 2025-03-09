@@ -19,6 +19,8 @@ import (
 
 var client gobnb.Client
 
+var maxConcurrentAvailability = 20
+
 func main() {
 	// Initialize random seed
 	rand.Seed(time.Now().UnixNano())
@@ -54,6 +56,9 @@ func getAvailability(roomID int64) {
 	}
 
 	// Save all availability data to a file
+	if len(daysData) == 0 {
+		return
+	}
 	allJSON, _ := gocsv.MarshalString(&daysData)
 	filePath := fmt.Sprintf("%s/availability.csv", folderPath)
 	if err := os.WriteFile(filePath, []byte(allJSON), 0644); err != nil {
@@ -176,7 +181,7 @@ func GenerateAvailabilityFromCSV() {
 	fmt.Printf("Found %d room records in CSV\n", len(records))
 
 	// Set up concurrency control
-	maxConcurrent := 1000 // Limit concurrent requests to avoid rate limiting
+	maxConcurrent := maxConcurrentAvailability // Limit concurrent requests to avoid rate limiting
 	semaphore := make(chan struct{}, maxConcurrent)
 	var wg sync.WaitGroup
 

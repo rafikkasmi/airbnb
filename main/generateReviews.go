@@ -17,6 +17,8 @@ import (
 	"github.com/gocarina/gocsv"
 )
 
+var maxConcurrentReviews = 20
+
 var client gobnb.Client
 
 func main() {
@@ -51,6 +53,9 @@ func getReviews(roomID int64) {
 	}
 
 	// Save all paginated reviews to a file
+	if len(reviewData) == 0 {
+		return
+	}
 	allJSON, _ := gocsv.MarshalString(&reviewData)
 	filePath := fmt.Sprintf("%s/reviews.csv", folderPath)
 	if err := os.WriteFile(filePath, []byte(allJSON), 0644); err != nil {
@@ -135,7 +140,7 @@ func GenerateReviewsFromCSV() {
 	fmt.Printf("Found %d room records in CSV\n", len(records))
 
 	// Set up concurrency control
-	maxConcurrent := 1000 // Limit concurrent requests to avoid rate limiting
+	maxConcurrent := maxConcurrentReviews // Limit concurrent requests to avoid rate limiting
 	semaphore := make(chan struct{}, maxConcurrent)
 	var wg sync.WaitGroup
 

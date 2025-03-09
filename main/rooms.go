@@ -3,15 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"sync"
 	"time"
 
 	"gobnb"
-	"gobnb/availability"
 	"gobnb/details"
-	"gobnb/reviews"
 	"gobnb/search"
 
 	// "github.com/johnbalvin/gobnb/utils"
@@ -19,11 +18,122 @@ import (
 	"github.com/gocarina/gocsv"
 )
 
-var client gobnb.Client
+var (
+	maxConcurrentSearch = 20
+	maxConcurrentRooms  = 20
+)
+
+var CITIES = []string{
+	// "Marrakesh",
+	"Gueliz, Marrakesh",
+	// "Medina	, Marrakesh",
+	// "Sidi Youssef Ben Ali, Marrakesh",
+	// "Annakhil, Marrakesh",
+	// "Mechouar Kasba, Marrakesh",
+	// "Saada, Marrakesh",
+	// "Tassoultante, Marrakesh",
+	// "Loudaya, Marrakesh",
+	// "Alouidane, Marrakesh",
+	// "Souihla, Marrakesh",
+	// "Oulad Hassoune, Marrakesh",
+	// "Harbil, Marrakesh",
+	// "Ouled Dlim, Marrakesh",
+	// "Ouahat Sidi Brahim, Marrakesh",
+	// "Ait Imour, Marrakesh",
+	// "M'Nabha, Marrakesh",
+	// "Sid Zouine, Marrakesh",
+	// "Agafay, Marrakesh",
+	// "Bab Ghmat, Marrakesh",
+	// //neighboorhoods
+	// "Arset El Baraka, Marrakesh",
+	// "Arset Moulay Bouaza, Marrakesh",
+	// "Djane Ben Chogra, Marrakesh",
+	// "Arset El Houta, Marrakesh",
+	// "Bab Aylan, Marrakesh",
+	// "Arset Sidi Youssef, Marrakesh",
+	// "Derb Chtouka, Marrakesh",
+	// "Bab Hmar, Marrakesh",
+	// "Bab Agnaou, Marrakesh",
+	// "Quartier Jnan Laafia, Marrakesh",
+	// "Toureg, Marrakesh",
+	// "Kasbah, Marrakesh",
+	// "Mellah, Marrakesh",
+	// "Arset El Maach, Marrakesh",
+	// "Arset Moulay Moussa, Marrakesh",
+	// "Riad Zitoun Jdid, Marrakesh",
+	// "Kennaria, Marrakesh",
+	// "Rahba Kedima, Marrakesh",
+	// "Kaat Benahid, Marrakesh",
+	// "Zaouiat Lahdar, Marrakesh",
+	// "El Moukef, Marrakesh",
+	// "Riad Laarous, Marrakesh",
+	// "Assouel, Marrakesh",
+	// "Kechich, Marrakesh",
+	// "Douar Fekhara, Marrakesh",
+	// "Arset Tihiri, Marrakesh",
+	// "Sidi Ben Slimane El Jazouli, Marrakesh",
+	// "Diour Jdad, Marrakesh",
+	// "Rmila, Marrakesh",
+	// "Zaouia Sidi Rhalem, Marrakesh",
+	// "Kbour Chou, Marrakesh",
+	// "Ain Itti, Marrakesh",
+	// "Bab Doukkala, Marrakesh",
+	// "El Hara, Marrakesh",
+	// "Arset El Bilk, Marrakesh",
+}
+
+var (
+	client gobnb.Client
+	// Global variable to store room details from CSV
+	existingRooms []details.Data
+	// Map for quick room ID lookups
+	existingRoomIDs map[int64]bool
+)
+
+// loadRoomDetailsCSV loads the room details from CSV file into memory
+func loadRoomDetailsCSV() error {
+	// Initialize the map
+	existingRoomIDs = make(map[int64]bool)
+
+	// Create output directory if it doesn't exist
+	if err := os.MkdirAll("./output", 0755); err != nil {
+		return fmt.Errorf("error creating output directory: %w", err)
+	}
+
+	// Try to open the CSV file
+	filePath := "./output/rooms_details.csv"
+	file, err := os.Open(filePath)
+	if err != nil {
+		// If file doesn't exist, initialize empty slices and return
+		if os.IsNotExist(err) {
+			existingRooms = []details.Data{}
+			return nil
+		}
+		return fmt.Errorf("error opening rooms_details.csv: %w", err)
+	}
+	defer file.Close()
+
+	// Parse the CSV file
+	if err := gocsv.UnmarshalFile(file, &existingRooms); err != nil {
+		return fmt.Errorf("error parsing rooms_details.csv: %w", err)
+	}
+
+	// Build the map of room IDs for quick lookup
+	for _, room := range existingRooms {
+		existingRoomIDs[room.RoomID] = true
+	}
+
+	fmt.Printf("Loaded %d rooms from rooms_details.csv\n", len(existingRooms))
+	return nil
+}
 
 func main() {
 	client = gobnb.DefaultClient()
-	// Uncomment one of these function calls to run different examples
+
+	// Load room details from CSV at startup
+	if err := loadRoomDetailsCSV(); err != nil {
+		log.Printf("Warning: Failed to load room details: %v\n", err)
+	}
 
 	// Example 1: Search for rooms
 	searchForRooms()
@@ -35,6 +145,121 @@ func main() {
 	// getReviews(290701)
 
 	// getRoomYearAvailability(290701)
+
+	// Example: Check if a room ID exists and update the CSV file
+	// checkAndUpdateRoomDetails(1234567890)
+}
+
+// checkRoomExists checks if a room ID exists in the roomDetails.csv file
+func checkRoomExists(roomID int64) (bool, error) {
+	// Simply check the map for the room ID
+	return existingRoomIDs[roomID], nil
+}
+
+// updateRoomDetailsCSV updates the roomDetails.csv file with newly added rooms
+func updateRoomDetailsCSV(newRooms []details.Data) error {
+	// Create output directory if it doesn't exist
+	if err := os.MkdirAll("./output", 0755); err != nil {
+		return fmt.Errorf("error creating output directory: %w", err)
+	}
+
+	filePath := "./output/rooms_details.csv"
+
+	// Filter out rooms that already exist using our global map
+	var uniqueNewRooms []details.Data
+	for _, room := range newRooms {
+		if !existingRoomIDs[room.RoomID] {
+			uniqueNewRooms = append(uniqueNewRooms, room)
+			// Update our global map and slice with the new room
+			existingRoomIDs[room.RoomID] = true
+		}
+	}
+
+	// If no new unique rooms, return
+	if len(uniqueNewRooms) == 0 {
+		fmt.Println("No new rooms to add to rooms_details.csv")
+		return nil
+	}
+
+	// Add unique new rooms to existing rooms
+	existingRooms = append(existingRooms, uniqueNewRooms...)
+	fmt.Printf("Adding %d new rooms to existing %d rooms\n", len(uniqueNewRooms), len(existingRooms)-len(uniqueNewRooms))
+
+	// Write all rooms back to the CSV file
+
+	// Create a backup of the original file if it exists
+	if _, err := os.Stat(filePath); err == nil {
+		backupFile := fmt.Sprintf("./output/rooms_details_backup_%s.csv", time.Now().Format("20060102_150405"))
+		if err := copyFile(filePath, backupFile); err != nil {
+			log.Printf("Error creating backup of rooms_details.csv: %v", err)
+		} else {
+			fmt.Printf("Created backup of rooms_details.csv at %s\n", backupFile)
+		}
+	}
+
+	// Write the updated rooms to the CSV file
+	outFile, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("error creating rooms_details.csv: %w", err)
+	}
+	defer outFile.Close()
+
+	if err := gocsv.MarshalFile(&existingRooms, outFile); err != nil {
+		return fmt.Errorf("error writing to rooms_details.csv: %w", err)
+	}
+
+	fmt.Printf("Successfully wrote %d rooms to rooms_details.csv\n", len(newRooms))
+	return nil
+}
+
+// checkAndUpdateRoomDetails checks if a room exists and updates the CSV file with new room details
+func checkAndUpdateRoomDetails(roomID int64) error {
+	// Check if room exists
+	exists, err := checkRoomExists(roomID)
+	if err != nil {
+		return fmt.Errorf("error checking if room exists: %w", err)
+	}
+
+	if exists {
+		fmt.Printf("Room %d already exists in the CSV file\n", roomID)
+		return nil
+	}
+
+	// Room doesn't exist, fetch details
+	roomDetails, err := client.DetailsFromRoomID(roomID)
+	if err != nil {
+		return fmt.Errorf("error fetching details for room %d: %w", roomID, err)
+	}
+
+	// Update the CSV file with the new room
+	if err := updateRoomDetailsCSV([]details.Data{roomDetails}); err != nil {
+		return fmt.Errorf("error updating CSV file: %w", err)
+	}
+
+	fmt.Printf("Successfully added room %d to the CSV file\n", roomID)
+	return nil
+}
+
+// copyFile copies a file from src to dst
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, sourceFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // citySearchResult holds the result of a city search operation
@@ -47,64 +272,7 @@ type citySearchResult struct {
 // searchForRooms searches for rooms in multiple locations asynchronously and gets their details
 func searchForRooms() {
 	// List of cities to search in
-	Cities := []string{
-		"Menara, Marrakesh",
-		"Gueliz, Marrakesh",
-		"Medina, Marrakesh",
-		"Sidi Youssef Ben Ali, Marrakesh",
-		"Annakhil, Marrakesh",
-		"Mechouar Kasba, Marrakesh",
-		"Saada, Marrakesh",
-		"Tassoultante, Marrakesh",
-		"Loudaya, Marrakesh",
-		"Alouidane, Marrakesh",
-		"Souihla, Marrakesh",
-		"Oulad Hassoune, Marrakesh",
-		"Harbil, Marrakesh",
-		"Ouled Dlim, Marrakesh",
-		"Ouahat Sidi Brahim, Marrakesh",
-		"Ait Imour, Marrakesh",
-		"M'Nabha, Marrakesh",
-		"Sid Zouine, Marrakesh",
-		"Agafay, Marrakesh",
-		"Bab Ghmat, Marrakesh",
-		//neighboorhoods
-		// "Arset El Baraka, Marrakesh",
-		// "Arset Moulay Bouaza, Marrakesh",
-		// "Djane Ben Chogra, Marrakesh",
-		// "Arset El Houta, Marrakesh",
-		// "Bab Aylan, Marrakesh",
-		// "Arset Sidi Youssef, Marrakesh",
-		// "Derb Chtouka, Marrakesh",
-		// "Bab Hmar, Marrakesh",
-		// "Bab Agnaou, Marrakesh",
-		// "Quartier Jnan Laafia, Marrakesh",
-		// "Toureg, Marrakesh",
-		// "Kasbah, Marrakesh",
-		// "Mellah, Marrakesh",
-		// "Arset El Maach, Marrakesh",
-		// "Arset Moulay Moussa, Marrakesh",
-		// "Riad Zitoun Jdid, Marrakesh",
-		// "Kennaria, Marrakesh",
-		// "Rahba Kedima, Marrakesh",
-		// "Kaat Benahid, Marrakesh",
-		// "Zaouiat Lahdar, Marrakesh",
-		// "El Moukef, Marrakesh",
-		// "Riad Laarous, Marrakesh",
-		// "Assouel, Marrakesh",
-		// "Kechich, Marrakesh",
-		// "Douar Fekhara, Marrakesh",
-		// "Arset Tihiri, Marrakesh",
-		// "Sidi Ben Slimane El Jazouli, Marrakesh",
-		// "Diour Jdad, Marrakesh",
-		// "Rmila, Marrakesh",
-		// "Zaouia Sidi Rhalem, Marrakesh",
-		// "Kbour Chou, Marrakesh",
-		// "Ain Itti, Marrakesh",
-		// "Bab Doukkala, Marrakesh",
-		// "El Hara, Marrakesh",
-		// "Arset El Bilk, Marrakesh",
-	}
+	Cities := CITIES
 
 	fmt.Printf("Starting asynchronous search for rooms in %d cities...\n", len(Cities))
 
@@ -113,7 +281,7 @@ func searchForRooms() {
 	var wgCities sync.WaitGroup
 
 	// Set up a worker pool with a maximum of 5 concurrent searches
-	maxConcurrentSearches := 20
+	maxConcurrentSearches := maxConcurrentSearch
 	searchSemaphore := make(chan struct{}, maxConcurrentSearches)
 
 	// Launch a goroutine for each city search
@@ -212,7 +380,7 @@ func searchForRooms() {
 	}
 
 	// Set up a worker pool with a maximum of 10 concurrent requests
-	maxConcurrent := 50
+	maxConcurrent := maxConcurrentRooms
 	semaphore := make(chan struct{}, maxConcurrent)
 	resultsChan := make(chan roomDetailResult)
 
@@ -236,6 +404,22 @@ func searchForRooms() {
 			// Acquire a semaphore slot
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
+
+			// Check if the room already exists in the CSV file
+			exists, err := checkRoomExists(id)
+			if err != nil {
+				log.Printf("Error checking if room %d exists: %v", id, err)
+			}
+
+			if exists {
+				// Room already exists, skip fetching details
+				resultsChan <- roomDetailResult{
+					roomID: id,
+					name:   info.Name,
+					err:    fmt.Errorf("room already exists in CSV file"),
+				}
+				return
+			}
 
 			// Add a small random delay to avoid all requests hitting at once
 			time.Sleep(time.Duration(id%100) * time.Millisecond)
@@ -298,7 +482,12 @@ func searchForRooms() {
 		fmt.Printf("[%d/%d] Room %d: %s - ", completed, total, result.roomID, result.name)
 
 		if result.err != nil {
-			fmt.Printf("Error: %s\n", result.err)
+			// Check if this is our special case for existing rooms
+			if result.err.Error() == "room already exists in CSV file" {
+				fmt.Println("Skipped (already exists in CSV)")
+			} else {
+				fmt.Printf("Error: %s\n", result.err)
+			}
 			continue
 		}
 
@@ -307,31 +496,11 @@ func searchForRooms() {
 	}
 
 	// Save all room details to a JSON file
-	fmt.Printf("\nSaving details for %d rooms to rooms_details.json\n", len(allRoomDetails))
+	fmt.Printf("\nSaving details for %d rooms to rooms_details.csv\n", len(allRoomDetails))
 
-	// Marshal the room details to JSON
-
-	detailsJSON, err := gocsv.MarshalString(&allRoomDetails)
-	if err != nil {
-		log.Println("Error marshaling room details to JSON:", err)
-		return
-	}
-
-	// Write the JSON to a file
-	os.Remove("./rooms_details.csv")
-
-	// Create folder for the room if it doesn't exist
-	folderPath := fmt.Sprintf("./output/")
-	if err := os.MkdirAll(folderPath, 0755); err != nil {
-		log.Println("Error creating directory:", err)
-		return
-	}
-
-	// Save all paginated reviews to a file
-	filePath := fmt.Sprintf("%s/rooms_details.csv", folderPath)
-
-	if err := os.WriteFile(filePath, []byte(detailsJSON), 0644); err != nil {
-		log.Println("Error writing room details to file:", err)
+	// Update the CSV file with the new rooms
+	if err := updateRoomDetailsCSV(allRoomDetails); err != nil {
+		log.Printf("Error updating rooms_details.csv: %v\n", err)
 		return
 	}
 
@@ -357,215 +526,4 @@ func getRooms() {
 		log.Println(err)
 		return
 	}
-}
-
-// getReviews fetches and displays reviews for a specific room ID
-func getReviews(roomID int64) {
-	// Use a known valid room ID with reviews
-	// Using the room ID from the example URL
-	// var roomID int64 = 290701
-
-	fmt.Printf("Fetching reviews for room ID: %d\n", roomID)
-
-	// Create a client
-	// client := gobnb.DefaultClient()
-
-	// Fetch reviews for the room
-	reviewData, err := reviews.InputData{
-		RoomId: roomID,
-	}.GetAllReviewsOfRoom(roomID, "USD", nil)
-	if err != nil {
-		log.Println("Error fetching reviews:", err)
-		return
-	}
-
-	// Print debug information about the response
-	// fmt.Printf("Raw review data: %+v\n", reviewData)
-	fmt.Println(len(reviewData))
-
-	// // Print summary information
-	// fmt.Printf("Room %d has %d reviews with an average rating of %.1f\n",
-	// 	roomID, reviewData.TotalReviews, reviewData.Rating)
-
-	// // Print the first few reviews
-	// fmt.Println("Sample reviews:")
-	// for i, review := range reviewData.Reviews {
-	// 	if i >= 3 { // Only show first 3 reviews
-	// 		break
-	// 	}
-	// 	fmt.Printf("  Review #%d by %s (%d stars): %s\n",
-	// 		i+1, review.AuthorName, review.Rating, truncateString(review.Comments, 100))
-	// }
-
-	// // Save all reviews to a file
-	// rawJSON, _ := json.MarshalIndent(reviewData, "", "  ")
-	// if err := os.WriteFile("./reviews.json", rawJSON, 0644); err != nil {
-	// 	log.Println("Error saving reviews:", err)
-	// 	return
-	// }
-	// fmt.Println("All reviews saved to reviews.json")
-
-	// // Fetch all reviews with pagination if there are more
-	// if reviewData.HasMoreReviews {
-	// 	fmt.Println("Fetching all reviews with pagination...")
-	// 	allReviews, err := client.AllReviewsFromRoomID(roomID)
-	// 	if err != nil {
-	// 		log.Println("Error fetching all reviews:", err)
-	// 		return
-	// 	}
-
-	// 	fmt.Printf("Successfully fetched all %d reviews\n", len(allReviews.Reviews))
-
-	// Save all paginated reviews to a file
-	// Create folder for the room if it doesn't exist
-	folderPath := fmt.Sprintf("./output/%d", roomID)
-	if err := os.MkdirAll(folderPath, 0755); err != nil {
-		log.Println("Error creating directory:", err)
-		return
-	}
-
-	// Save all paginated reviews to a file
-	allJSON, _ := gocsv.MarshalString(&reviewData)
-	filePath := fmt.Sprintf("%s/reviews.csv", folderPath)
-	if err := os.WriteFile(filePath, []byte(allJSON), 0644); err != nil {
-		log.Println("Error saving all reviews:", err)
-		return
-	}
-	fmt.Printf("All paginated reviews saved to %s\n", filePath)
-	// }
-}
-
-func getRoomYearAvailability(roomID int64) {
-
-	fmt.Printf("Fetching availability for room ID: %d\n", roomID)
-
-	// Create a client
-	// client := gobnb.DefaultClient()
-
-	// Fetch reviews for the room
-	availabilityData, daysData, err := availability.InputData{
-		RoomId:     roomID,
-		StartMonth: 3,
-		StartYear:  2025,
-	}.GetAvailabilityCalendar("USD", nil)
-	if err != nil {
-		log.Println("Error fetching availbility:", err)
-		return
-	}
-
-	// Print debug information about the response
-	// fmt.Printf("Raw review data: %+v\n", reviewData)
-	fmt.Println(len(daysData))
-
-	fmt.Println(availabilityData)
-
-	// // Print summary information
-	// fmt.Printf("Room %d has %d reviews with an average rating of %.1f\n",
-	// 	roomID, reviewData.TotalReviews, reviewData.Rating)
-
-	// // Print the first few reviews
-	// fmt.Println("Sample reviews:")
-	// for i, review := range reviewData.Reviews {
-	// 	if i >= 3 { // Only show first 3 reviews
-	// 		break
-	// 	}
-	// 	fmt.Printf("  Review #%d by %s (%d stars): %s\n",
-	// 		i+1, review.AuthorName, review.Rating, truncateString(review.Comments, 100))
-	// }
-
-	// // Save all reviews to a file
-	// rawJSON, _ := json.MarshalIndent(reviewData, "", "  ")
-	// if err := os.WriteFile("./reviews.json", rawJSON, 0644); err != nil {
-	// 	log.Println("Error saving reviews:", err)
-	// 	return
-	// }
-	// fmt.Println("All reviews saved to reviews.json")
-
-	// // Fetch all reviews with pagination if there are more
-	// if reviewData.HasMoreReviews {
-	// 	fmt.Println("Fetching all reviews with pagination...")
-	// 	allReviews, err := client.AllReviewsFromRoomID(roomID)
-	// 	if err != nil {
-	// 		log.Println("Error fetching all reviews:", err)
-	// 		return
-	// 	}
-
-	// 	fmt.Printf("Successfully fetched all %d reviews\n", len(allReviews.Reviews))
-
-	// Create folder for the room if it doesn't exist
-	folderPath := fmt.Sprintf("./output/%d", roomID)
-	if err := os.MkdirAll(folderPath, 0755); err != nil {
-		log.Println("Error creating directory:", err)
-		return
-	}
-
-	// Save all paginated reviews to a file
-	allJSON, _ := gocsv.MarshalString(&daysData)
-	filePath := fmt.Sprintf("%s/availability.csv", folderPath)
-	if err := os.WriteFile(filePath, []byte(allJSON), 0644); err != nil {
-		log.Println("Error saving availability data:", err)
-		return
-	}
-	fmt.Printf("Availability data saved to %s\n", filePath)
-	// }
-}
-
-// Helper function to truncate long strings
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
-}
-
-// fetchReviewsForRoom fetches reviews for a specific room ID and saves them to a file
-func fetchReviewsForRoom(roomID int64, folderPath string) {
-	fmt.Printf("Fetching reviews for room ID: %d\n", roomID)
-
-	// Fetch reviews for the room
-	reviewData, err := reviews.InputData{
-		RoomId: roomID,
-	}.GetAllReviewsOfRoom(roomID, "USD", nil)
-	if err != nil {
-		log.Printf("Error fetching reviews for room %d: %v\n", roomID, err)
-		return
-	}
-
-	fmt.Printf("Room %d: Found %d reviews\n", roomID, len(reviewData))
-
-	// Save reviews to a file
-	allJSON, _ := gocsv.MarshalString(&reviewData)
-	filePath := fmt.Sprintf("%s/reviews.csv", folderPath)
-	if err := os.WriteFile(filePath, []byte(allJSON), 0644); err != nil {
-		log.Printf("Error saving reviews for room %d: %v\n", roomID, err)
-		return
-	}
-	fmt.Printf("Room %d: Reviews saved to %s\n", roomID, filePath)
-}
-
-// fetchAvailabilityForRoom fetches availability data for a specific room ID and saves it to a file
-func fetchAvailabilityForRoom(roomID int64, folderPath string) {
-	fmt.Printf("Fetching availability for room ID: %d\n", roomID)
-
-	// Fetch availability data for the room
-	_, daysData, err := availability.InputData{
-		RoomId:     roomID,
-		StartMonth: 3,
-		StartYear:  2025,
-	}.GetAvailabilityCalendar("USD", nil)
-	if err != nil {
-		log.Printf("Error fetching availability for room %d: %v\n", roomID, err)
-		return
-	}
-
-	fmt.Printf("Room %d: Found %d availability days\n", roomID, len(daysData))
-
-	// Save availability data to a file
-	allJSON, _ := gocsv.MarshalString(&daysData)
-	filePath := fmt.Sprintf("%s/availability.csv", folderPath)
-	if err := os.WriteFile(filePath, []byte(allJSON), 0644); err != nil {
-		log.Printf("Error saving availability for room %d: %v\n", roomID, err)
-		return
-	}
-	fmt.Printf("Room %d: Availability data saved to %s\n", roomID, filePath)
 }
