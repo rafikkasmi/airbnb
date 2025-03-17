@@ -3,15 +3,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"log"
-	"os"
-	"sync"
-	"time"
-
 	"gobnb"
 	"gobnb/details"
 	"gobnb/search"
+	"gobnb/utils"
+	"io"
+	"log"
+	"math/rand"
+	"net/url"
+	"os"
+	"strings"
+	"sync"
+	"time"
 
 	// "github.com/johnbalvin/gobnb/utils"
 	// "github.com/johnbalvin/gobnb/details"
@@ -24,71 +27,98 @@ var (
 )
 
 var CITIES = []string{
-	// "Marrakesh",
+	"Marrakesh",
 	"Gueliz, Marrakesh",
-	// "Medina	, Marrakesh",
-	// "Sidi Youssef Ben Ali, Marrakesh",
-	// "Annakhil, Marrakesh",
-	// "Mechouar Kasba, Marrakesh",
-	// "Saada, Marrakesh",
-	// "Tassoultante, Marrakesh",
-	// "Loudaya, Marrakesh",
-	// "Alouidane, Marrakesh",
-	// "Souihla, Marrakesh",
-	// "Oulad Hassoune, Marrakesh",
-	// "Harbil, Marrakesh",
-	// "Ouled Dlim, Marrakesh",
-	// "Ouahat Sidi Brahim, Marrakesh",
-	// "Ait Imour, Marrakesh",
-	// "M'Nabha, Marrakesh",
-	// "Sid Zouine, Marrakesh",
-	// "Agafay, Marrakesh",
-	// "Bab Ghmat, Marrakesh",
-	// //neighboorhoods
-	// "Arset El Baraka, Marrakesh",
-	// "Arset Moulay Bouaza, Marrakesh",
-	// "Djane Ben Chogra, Marrakesh",
-	// "Arset El Houta, Marrakesh",
-	// "Bab Aylan, Marrakesh",
-	// "Arset Sidi Youssef, Marrakesh",
-	// "Derb Chtouka, Marrakesh",
-	// "Bab Hmar, Marrakesh",
-	// "Bab Agnaou, Marrakesh",
-	// "Quartier Jnan Laafia, Marrakesh",
-	// "Toureg, Marrakesh",
-	// "Kasbah, Marrakesh",
-	// "Mellah, Marrakesh",
-	// "Arset El Maach, Marrakesh",
-	// "Arset Moulay Moussa, Marrakesh",
-	// "Riad Zitoun Jdid, Marrakesh",
-	// "Kennaria, Marrakesh",
-	// "Rahba Kedima, Marrakesh",
-	// "Kaat Benahid, Marrakesh",
-	// "Zaouiat Lahdar, Marrakesh",
-	// "El Moukef, Marrakesh",
-	// "Riad Laarous, Marrakesh",
-	// "Assouel, Marrakesh",
-	// "Kechich, Marrakesh",
-	// "Douar Fekhara, Marrakesh",
-	// "Arset Tihiri, Marrakesh",
-	// "Sidi Ben Slimane El Jazouli, Marrakesh",
-	// "Diour Jdad, Marrakesh",
-	// "Rmila, Marrakesh",
-	// "Zaouia Sidi Rhalem, Marrakesh",
-	// "Kbour Chou, Marrakesh",
-	// "Ain Itti, Marrakesh",
-	// "Bab Doukkala, Marrakesh",
-	// "El Hara, Marrakesh",
-	// "Arset El Bilk, Marrakesh",
+	"Medina	, Marrakesh",
+	"Sidi Youssef Ben Ali, Marrakesh",
+	"Annakhil, Marrakesh",
+	"Mechouar Kasba, Marrakesh",
+	"Saada, Marrakesh",
+	"Tassoultante, Marrakesh",
+	"Loudaya, Marrakesh",
+	"Alouidane, Marrakesh",
+	"Souihla, Marrakesh",
+	"Oulad Hassoune, Marrakesh",
+	"Harbil, Marrakesh",
+	"Ouled Dlim, Marrakesh",
+	"Ouahat Sidi Brahim, Marrakesh",
+	"Ait Imour, Marrakesh",
+	"M'Nabha, Marrakesh",
+	"Sid Zouine, Marrakesh",
+	"Agafay, Marrakesh",
+	"Bab Ghmat, Marrakesh",
+	//neighboorhoods
+	"Arset El Baraka, Marrakesh",
+	"Arset Moulay Bouaza, Marrakesh",
+	"Djane Ben Chogra, Marrakesh",
+	"Arset El Houta, Marrakesh",
+	"Bab Aylan, Marrakesh",
+	"Arset Sidi Youssef, Marrakesh",
+	"Derb Chtouka, Marrakesh",
+	"Bab Hmar, Marrakesh",
+	"Bab Agnaou, Marrakesh",
+	"Quartier Jnan Laafia, Marrakesh",
+	"Toureg, Marrakesh",
+	"Kasbah, Marrakesh",
+	"Mellah, Marrakesh",
+	"Arset El Maach, Marrakesh",
+	"Arset Moulay Moussa, Marrakesh",
+	"Riad Zitoun Jdid, Marrakesh",
+	"Kennaria, Marrakesh",
+	"Rahba Kedima, Marrakesh",
+	"Kaat Benahid, Marrakesh",
+	"Zaouiat Lahdar, Marrakesh",
+	"El Moukef, Marrakesh",
+	"Riad Laarous, Marrakesh",
+	"Assouel, Marrakesh",
+	"Kechich, Marrakesh",
+	"Douar Fekhara, Marrakesh",
+	"Arset Tihiri, Marrakesh",
+	"Sidi Ben Slimane El Jazouli, Marrakesh",
+	"Diour Jdad, Marrakesh",
+	"Rmila, Marrakesh",
+	"Zaouia Sidi Rhalem, Marrakesh",
+	"Kbour Chou, Marrakesh",
+	"Ain Itti, Marrakesh",
+	"Bab Doukkala, Marrakesh",
+	"El Hara, Marrakesh",
+	"Arset El Bilk, Marrakesh",
 }
 
 var (
-	client gobnb.Client
+	proxyRotator *utils.ProxyRotator
 	// Global variable to store room details from CSV
 	existingRooms []details.Data
 	// Map for quick room ID lookups
 	existingRoomIDs map[int64]bool
 )
+
+// loadProxies loads proxy URLs from a file
+func loadProxies(filePath string) ([]string, error) {
+	// Check if the file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		log.Printf("Proxy file %s does not exist, continuing without proxies", filePath)
+		return nil, nil
+	}
+
+	// Read the file
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading proxy file: %w", err)
+	}
+
+	// Split by newlines and filter empty lines
+	var proxies []string
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") {
+			proxies = append(proxies, line)
+		}
+	}
+
+	return proxies, nil
+}
 
 // loadRoomDetailsCSV loads the room details from CSV file into memory
 func loadRoomDetailsCSV() error {
@@ -128,7 +158,26 @@ func loadRoomDetailsCSV() error {
 }
 
 func main() {
-	client = gobnb.DefaultClient()
+	rand.Seed(time.Now().UnixNano())
+
+	// Load proxies from file
+	proxyFilePath := "./proxies.txt"
+	proxyURLs, err := loadProxies(proxyFilePath)
+	if err != nil {
+		log.Printf("Warning: Failed to load proxies: %v", err)
+	}
+
+	// Initialize proxy rotator
+	if len(proxyURLs) > 0 {
+		proxyRotator, err = utils.NewProxyRotator(proxyURLs)
+		if err != nil {
+			log.Printf("Warning: Failed to initialize proxy rotator: %v", err)
+		} else {
+			log.Printf("Successfully loaded %d proxies", proxyRotator.Count())
+		}
+	} else {
+		log.Println("No proxies loaded, requests will use direct connection")
+	}
 
 	// Load room details from CSV at startup
 	if err := loadRoomDetailsCSV(); err != nil {
@@ -213,32 +262,32 @@ func updateRoomDetailsCSV(newRooms []details.Data) error {
 }
 
 // checkAndUpdateRoomDetails checks if a room exists and updates the CSV file with new room details
-func checkAndUpdateRoomDetails(roomID int64) error {
-	// Check if room exists
-	exists, err := checkRoomExists(roomID)
-	if err != nil {
-		return fmt.Errorf("error checking if room exists: %w", err)
-	}
+// func checkAndUpdateRoomDetails(roomID int64) error {
+// 	// Check if room exists
+// 	exists, err := checkRoomExists(roomID)
+// 	if err != nil {
+// 		return fmt.Errorf("error checking if room exists: %w", err)
+// 	}
 
-	if exists {
-		fmt.Printf("Room %d already exists in the CSV file\n", roomID)
-		return nil
-	}
+// 	if exists {
+// 		fmt.Printf("Room %d already exists in the CSV file\n", roomID)
+// 		return nil
+// 	}
 
-	// Room doesn't exist, fetch details
-	roomDetails, err := client.DetailsFromRoomID(roomID)
-	if err != nil {
-		return fmt.Errorf("error fetching details for room %d: %w", roomID, err)
-	}
+// 	// Room doesn't exist, fetch details
+// 	roomDetails, err := client.DetailsFromRoomID(roomID)
+// 	if err != nil {
+// 		return fmt.Errorf("error fetching details for room %d: %w", roomID, err)
+// 	}
 
-	// Update the CSV file with the new room
-	if err := updateRoomDetailsCSV([]details.Data{roomDetails}); err != nil {
-		return fmt.Errorf("error updating CSV file: %w", err)
-	}
+// 	// Update the CSV file with the new room
+// 	if err := updateRoomDetailsCSV([]details.Data{roomDetails}); err != nil {
+// 		return fmt.Errorf("error updating CSV file: %w", err)
+// 	}
 
-	fmt.Printf("Successfully added room %d to the CSV file\n", roomID)
-	return nil
-}
+// 	fmt.Printf("Successfully added room %d to the CSV file\n", roomID)
+// 	return nil
+// }
 
 // copyFile copies a file from src to dst
 func copyFile(src, dst string) error {
@@ -302,13 +351,22 @@ func searchForRooms() {
 			checkIn := search.Check{}
 			coords := search.CoordinatesInput{}
 
+			// Get a proxy for this request
+			var proxy *url.URL
+			if proxyRotator != nil {
+				proxy = proxyRotator.GetNextProxy()
+				if proxy != nil {
+					log.Printf("Using proxy %s for search in %s", proxy.String(), cityName)
+				}
+			}
+
 			// Perform the search
 			results, err := search.InputData{
 				Coordinates: coords,
 				Check:       checkIn,
 				ZoomValue:   zoomvalue,
 				Query:       cityName,
-			}.SearchAll("USD", nil)
+			}.SearchAll("USD", proxy)
 
 			// Send the results back through the channel
 			citiesResultsChan <- citySearchResult{
@@ -367,7 +425,6 @@ func searchForRooms() {
 	fmt.Println("Search results saved to searchResult.json")
 	// }()
 
-	// return;
 	// Now get details for each room asynchronously
 	fmt.Println("\nFetching details for each room asynchronously...")
 
@@ -431,6 +488,17 @@ func searchForRooms() {
 			}
 
 			// Get room details
+			// Get a proxy for this request
+			var proxy *url.URL
+			if proxyRotator != nil {
+				proxy = proxyRotator.GetNextProxy()
+				if proxy != nil {
+					log.Printf("Using proxy %s for search in %s", proxy.String())
+				}
+			}
+			client := gobnb.Client{
+				ProxyURL: proxy,
+			}
 			roomDetails, err := client.DetailsFromRoomID(id)
 
 			// // Asynchronously fetch reviews and availability data
@@ -453,6 +521,9 @@ func searchForRooms() {
 			// They will finish in the background
 
 			// Send the result back through the channel
+			roomDetails.Price.Amount = info.Price.Unit.Amount
+			roomDetails.Price.CurrencySymbol = info.Price.Unit.CurrencySymbol
+			roomDetails.Price.Qualifier = info.Price.Unit.Qualifier
 			resultsChan <- roomDetailResult{
 				details: roomDetails,
 				roomID:  id,
@@ -490,6 +561,7 @@ func searchForRooms() {
 			}
 			continue
 		}
+		//save price data
 
 		fmt.Println("Success")
 		allRoomDetails = append(allRoomDetails, result.details)
@@ -509,21 +581,4 @@ func searchForRooms() {
 
 func getRoomDetail(roomId int64) {
 
-}
-
-func getRooms() {
-	var roomID int64
-	roomID = 290701
-	// romID:=[]int{roomID}
-	data, err := client.DetailsFromRoomID(roomID)
-	if err != nil {
-		log.Println("test:2 -> err: ", err)
-		return
-	}
-	rawJSON, _ := gocsv.MarshalString(&data)
-	fmt.Printf("%s", rawJSON) //in case you don't have write permisions
-	if err := os.WriteFile("./details.csv", []byte(rawJSON), 0644); err != nil {
-		log.Println(err)
-		return
-	}
 }

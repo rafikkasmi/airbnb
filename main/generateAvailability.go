@@ -5,25 +5,75 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"gobnb"
 	"gobnb/availability"
+	"gobnb/utils"
 
 	"github.com/gocarina/gocsv"
 )
 
+var maxConcurrentAvailability = 20
+
+var proxyRotator *utils.ProxyRotator
+
 var client gobnb.Client
 
-var maxConcurrentAvailability = 20
+// loadProxies loads proxy URLs from a file
+func loadProxies(filePath string) ([]string, error) {
+	// Check if the file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		log.Printf("Proxy file %s does not exist, continuing without proxies", filePath)
+		return nil, nil
+	}
+
+	// Read the file
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading proxy file: %w", err)
+	}
+
+	// Split by newlines and filter empty lines
+	var proxies []string
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") {
+			proxies = append(proxies, line)
+		}
+	}
+
+	return proxies, nil
+}
 
 func main() {
 	// Initialize random seed
 	rand.Seed(time.Now().UnixNano())
+
+	proxyFilePath := "./proxies.txt"
+	proxyURLs, err := loadProxies(proxyFilePath)
+	if err != nil {
+		log.Printf("Warning: Failed to load proxies: %v", err)
+	}
+
+	// Initialize proxy rotator
+	if len(proxyURLs) > 0 {
+		proxyRotator, err = utils.NewProxyRotator(proxyURLs)
+		if err != nil {
+			log.Printf("Warning: Failed to initialize proxy rotator: %v", err)
+		} else {
+			log.Printf("Successfully loaded %d proxies", proxyRotator.Count())
+		}
+	} else {
+		log.Println("No proxies loaded, requests will use direct connection")
+	}
 
 	client = gobnb.DefaultClient()
 	// Call the function to generate availability data
@@ -116,12 +166,21 @@ func fetchAvailabilityForRoom(roomID int64, folderPath string) {
 
 	fmt.Printf("Fetching availability for room ID: %d\n", roomID)
 
+	// Get a proxy for this request
+	var proxy *url.URL
+	if proxyRotator != nil {
+		proxy = proxyRotator.GetNextProxy()
+		if proxy != nil {
+			log.Printf("Using proxy %s for reviews in %s", proxy.String())
+		}
+	}
+
 	// Fetch availability data for the room
 	_, daysData, err := availability.InputData{
 		RoomId:     roomID,
 		StartMonth: 3,
 		StartYear:  2025,
-	}.GetAvailabilityCalendar("USD", nil)
+	}.GetAvailabilityCalendar("USD", proxy)
 	if err != nil {
 		log.Printf("Error fetching availability for room %d: %v\n", roomID, err)
 		return
