@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -34,7 +35,7 @@ var CITIES = []string{
 	// "Medina	, Marrakesh",
 	// "Sidi Youssef Ben Ali, Marrakesh",
 	// "Annakhil, Marrakesh",
-	"Mechouar Kasba, Marrakesh",
+	// "Mechouar Kasba, Marrakesh",
 	// "Saada, Marrakesh",
 	// "Tassoultante, Marrakesh",
 	// "Loudaya, Marrakesh",
@@ -76,7 +77,7 @@ var CITIES = []string{
 	// "Kechich, Marrakesh",
 	// "Douar Fekhara, Marrakesh",
 	// "Arset Tihiri, Marrakesh",
-	// "Sidi Ben Slimane El Jazouli, Marrakesh",
+	"Sidi Ben Slimane El Jazouli, Marrakesh",
 	// "Diour Jdad, Marrakesh",
 	// "Rmila, Marrakesh",
 	// "Zaouia Sidi Rhalem, Marrakesh",
@@ -381,15 +382,15 @@ func searchForRooms() {
 			// Add a significant random delay before acquiring the semaphore
 			minDelay := 5000  // 5 seconds
 			maxDelay := 15000 // 15 seconds
-			
+
 			// Add some jitter to make the pattern less predictable
 			jitter := rand.Intn(3000) // Up to 3 seconds of additional randomness
 			randomDelay := minDelay + rand.Intn(maxDelay-minDelay) + jitter
-			
+
 			delaySeconds := float64(randomDelay) / 1000.0
 			log.Printf("City %s: Waiting %.2f seconds before starting search...", cityName, delaySeconds)
 			time.Sleep(time.Duration(randomDelay) * time.Millisecond)
-			
+
 			// Acquire a semaphore slot
 			searchSemaphore <- struct{}{}
 			defer func() { <-searchSemaphore }()
@@ -531,17 +532,20 @@ func searchForRooms() {
 			// Add a significant random delay between requests to avoid rate limiting
 			minDelay := 8000  // 8 seconds
 			maxDelay := 25000 // 25 seconds
-			
+
 			// Add some jitter to make the pattern less predictable
 			jitter := rand.Intn(3000) // Up to 3 seconds of additional randomness
 			randomDelay := minDelay + rand.Intn(maxDelay-minDelay) + jitter
-			
+
 			delaySeconds := float64(randomDelay) / 1000.0
 			log.Printf("Room %d: Waiting %.2f seconds before fetching details...", id, delaySeconds)
 			time.Sleep(time.Duration(randomDelay) * time.Millisecond)
 
-			// Create output directory for this room
-			folderPath := fmt.Sprintf("./output/%d", id)
+			// Get today's date in YYYY-MM-DD format
+			todayDate := time.Now().Format("2006-01-02")
+
+			// Create output directory for this room using the date-based structure
+			folderPath := filepath.Join("output", todayDate, "rooms", fmt.Sprintf("%d", id))
 			if err := os.MkdirAll(folderPath, 0755); err != nil {
 				log.Printf("Error creating directory for room %d: %v", id, err)
 			}
