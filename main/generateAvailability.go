@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -199,13 +200,43 @@ func fetchAvailabilityForRoom(roomID int64, folderPath string) {
 
 // GenerateAvailabilityFromCSV reads the room details CSV file and concurrently fetches availability for each room ID
 func GenerateAvailabilityFromCSV() {
-	// Path to the CSV file
-	csvPath := filepath.Join("output", "rooms_details.csv")
+	// Find the most recent date folder
+	csvPath := filepath.Join("output", "rooms_details.csv") // Default fallback path
+	
+	entries, err := os.ReadDir("output")
+	if err == nil && len(entries) > 0 {
+		// Filter directories with date format YYYY-MM-DD
+		var dateDirs []string
+		for _, entry := range entries {
+			if entry.IsDir() {
+				name := entry.Name()
+				// Check if the directory name matches the date format
+				if _, err := time.Parse("2006-01-02", name); err == nil {
+					dateDirs = append(dateDirs, name)
+				}
+			}
+		}
+		
+		// Sort directories by date (newest first)
+		sort.Sort(sort.Reverse(sort.StringSlice(dateDirs)))
+		
+		// Check if we found any date directories
+		if len(dateDirs) > 0 {
+			newestDir := dateDirs[0]
+			potentialPath := filepath.Join("output", newestDir, "rooms_details.csv")
+			
+			// Check if the file exists in the newest directory
+			if _, err := os.Stat(potentialPath); err == nil {
+				csvPath = potentialPath
+				fmt.Printf("Using most recent data from %s directory\n", newestDir)
+			}
+		}
+	}
 
 	// Open the CSV file
 	file, err := os.Open(csvPath)
 	if err != nil {
-		log.Fatalf("Failed to open CSV file: %v", err)
+		log.Fatalf("Failed to open CSV file %s: %v", csvPath, err)
 	}
 	defer file.Close()
 
@@ -268,8 +299,11 @@ func GenerateAvailabilityFromCSV() {
 			defer wg.Done()
 			defer func() { <-semaphore }() // Release semaphore slot when done
 
-			// Create output directory if it doesn't exist
-			folderPath := filepath.Join("output", "rooms", fmt.Sprintf("%d", id))
+			// Get today's date in YYYY-MM-DD format
+			todayDate := time.Now().Format("2006-01-02")
+			
+			// Create output directory with today's date if it doesn't exist
+			folderPath := filepath.Join("output", todayDate, "rooms", fmt.Sprintf("%d", id))
 			os.MkdirAll(folderPath, 0755)
 
 			// Fetch availability
@@ -288,5 +322,6 @@ func GenerateAvailabilityFromCSV() {
 	// Wait for all goroutines to complete
 	fmt.Println("Waiting for all availability fetching operations to complete...")
 	wg.Wait()
-	fmt.Println("All availability data has been fetched successfully!")
+	todayDate := time.Now().Format("2006-01-02")
+	fmt.Printf("All availability data has been fetched successfully and saved to output/%s/rooms/!\n", todayDate)
 }

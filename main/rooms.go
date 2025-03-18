@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -27,62 +28,62 @@ var (
 )
 
 var CITIES = []string{
-	"Marrakesh",
-	"Gueliz, Marrakesh",
-	"Medina	, Marrakesh",
-	"Sidi Youssef Ben Ali, Marrakesh",
-	"Annakhil, Marrakesh",
+	// "Marrakesh",
+	// "Gueliz, Marrakesh",
+	// "Medina	, Marrakesh",
+	// "Sidi Youssef Ben Ali, Marrakesh",
+	// "Annakhil, Marrakesh",
 	"Mechouar Kasba, Marrakesh",
-	"Saada, Marrakesh",
-	"Tassoultante, Marrakesh",
-	"Loudaya, Marrakesh",
-	"Alouidane, Marrakesh",
-	"Souihla, Marrakesh",
-	"Oulad Hassoune, Marrakesh",
-	"Harbil, Marrakesh",
-	"Ouled Dlim, Marrakesh",
-	"Ouahat Sidi Brahim, Marrakesh",
-	"Ait Imour, Marrakesh",
-	"M'Nabha, Marrakesh",
-	"Sid Zouine, Marrakesh",
-	"Agafay, Marrakesh",
-	"Bab Ghmat, Marrakesh",
-	//neighboorhoods
-	"Arset El Baraka, Marrakesh",
-	"Arset Moulay Bouaza, Marrakesh",
-	"Djane Ben Chogra, Marrakesh",
-	"Arset El Houta, Marrakesh",
-	"Bab Aylan, Marrakesh",
-	"Arset Sidi Youssef, Marrakesh",
-	"Derb Chtouka, Marrakesh",
-	"Bab Hmar, Marrakesh",
-	"Bab Agnaou, Marrakesh",
-	"Quartier Jnan Laafia, Marrakesh",
-	"Toureg, Marrakesh",
-	"Kasbah, Marrakesh",
-	"Mellah, Marrakesh",
-	"Arset El Maach, Marrakesh",
-	"Arset Moulay Moussa, Marrakesh",
-	"Riad Zitoun Jdid, Marrakesh",
-	"Kennaria, Marrakesh",
-	"Rahba Kedima, Marrakesh",
-	"Kaat Benahid, Marrakesh",
-	"Zaouiat Lahdar, Marrakesh",
-	"El Moukef, Marrakesh",
-	"Riad Laarous, Marrakesh",
-	"Assouel, Marrakesh",
-	"Kechich, Marrakesh",
-	"Douar Fekhara, Marrakesh",
-	"Arset Tihiri, Marrakesh",
-	"Sidi Ben Slimane El Jazouli, Marrakesh",
-	"Diour Jdad, Marrakesh",
-	"Rmila, Marrakesh",
-	"Zaouia Sidi Rhalem, Marrakesh",
-	"Kbour Chou, Marrakesh",
-	"Ain Itti, Marrakesh",
-	"Bab Doukkala, Marrakesh",
-	"El Hara, Marrakesh",
-	"Arset El Bilk, Marrakesh",
+	// "Saada, Marrakesh",
+	// "Tassoultante, Marrakesh",
+	// "Loudaya, Marrakesh",
+	// "Alouidane, Marrakesh",
+	// "Souihla, Marrakesh",
+	// "Oulad Hassoune, Marrakesh",
+	// "Harbil, Marrakesh",
+	// "Ouled Dlim, Marrakesh",
+	// "Ouahat Sidi Brahim, Marrakesh",
+	// "Ait Imour, Marrakesh",
+	// "M'Nabha, Marrakesh",
+	// "Sid Zouine, Marrakesh",
+	// "Agafay, Marrakesh",
+	// "Bab Ghmat, Marrakesh",
+	// //neighboorhoods
+	// "Arset El Baraka, Marrakesh",
+	// "Arset Moulay Bouaza, Marrakesh",
+	// "Djane Ben Chogra, Marrakesh",
+	// "Arset El Houta, Marrakesh",
+	// "Bab Aylan, Marrakesh",
+	// "Arset Sidi Youssef, Marrakesh",
+	// "Derb Chtouka, Marrakesh",
+	// "Bab Hmar, Marrakesh",
+	// "Bab Agnaou, Marrakesh",
+	// "Quartier Jnan Laafia, Marrakesh",
+	// "Toureg, Marrakesh",
+	// "Kasbah, Marrakesh",
+	// "Mellah, Marrakesh",
+	// "Arset El Maach, Marrakesh",
+	// "Arset Moulay Moussa, Marrakesh",
+	// "Riad Zitoun Jdid, Marrakesh",
+	// "Kennaria, Marrakesh",
+	// "Rahba Kedima, Marrakesh",
+	// "Kaat Benahid, Marrakesh",
+	// "Zaouiat Lahdar, Marrakesh",
+	// "El Moukef, Marrakesh",
+	// "Riad Laarous, Marrakesh",
+	// "Assouel, Marrakesh",
+	// "Kechich, Marrakesh",
+	// "Douar Fekhara, Marrakesh",
+	// "Arset Tihiri, Marrakesh",
+	// "Sidi Ben Slimane El Jazouli, Marrakesh",
+	// "Diour Jdad, Marrakesh",
+	// "Rmila, Marrakesh",
+	// "Zaouia Sidi Rhalem, Marrakesh",
+	// "Kbour Chou, Marrakesh",
+	// "Ain Itti, Marrakesh",
+	// "Bab Doukkala, Marrakesh",
+	// "El Hara, Marrakesh",
+	// "Arset El Bilk, Marrakesh",
 }
 
 var (
@@ -130,8 +131,40 @@ func loadRoomDetailsCSV() error {
 		return fmt.Errorf("error creating output directory: %w", err)
 	}
 
+	// Find the most recent date folder
+	filePath := "./output/rooms_details.csv" // Default fallback path
+
+	entries, err := os.ReadDir("./output")
+	if err == nil && len(entries) > 0 {
+		// Filter directories with date format YYYY-MM-DD
+		var dateDirs []string
+		for _, entry := range entries {
+			if entry.IsDir() {
+				name := entry.Name()
+				// Check if the directory name matches the date format
+				if _, err := time.Parse("2006-01-02", name); err == nil {
+					dateDirs = append(dateDirs, name)
+				}
+			}
+		}
+
+		// Sort directories by date (newest first)
+		sort.Sort(sort.Reverse(sort.StringSlice(dateDirs)))
+
+		// Check if we found any date directories
+		if len(dateDirs) > 0 {
+			newestDir := dateDirs[0]
+			potentialPath := fmt.Sprintf("./output/%s/rooms_details.csv", newestDir)
+
+			// Check if the file exists in the newest directory
+			if _, err := os.Stat(potentialPath); err == nil {
+				filePath = potentialPath
+				fmt.Printf("Using most recent data from %s directory\n", newestDir)
+			}
+		}
+	}
+
 	// Try to open the CSV file
-	filePath := "./output/rooms_details.csv"
 	file, err := os.Open(filePath)
 	if err != nil {
 		// If file doesn't exist, initialize empty slices and return
@@ -139,13 +172,13 @@ func loadRoomDetailsCSV() error {
 			existingRooms = []details.Data{}
 			return nil
 		}
-		return fmt.Errorf("error opening rooms_details.csv: %w", err)
+		return fmt.Errorf("error opening %s: %w", filePath, err)
 	}
 	defer file.Close()
 
 	// Parse the CSV file
 	if err := gocsv.UnmarshalFile(file, &existingRooms); err != nil {
-		return fmt.Errorf("error parsing rooms_details.csv: %w", err)
+		return fmt.Errorf("error parsing %s: %w", filePath, err)
 	}
 
 	// Build the map of room IDs for quick lookup
@@ -153,7 +186,7 @@ func loadRoomDetailsCSV() error {
 		existingRoomIDs[room.RoomID] = true
 	}
 
-	fmt.Printf("Loaded %d rooms from rooms_details.csv\n", len(existingRooms))
+	fmt.Printf("Loaded %d rooms from %s\n", len(existingRooms), filePath)
 	return nil
 }
 
@@ -207,12 +240,16 @@ func checkRoomExists(roomID int64) (bool, error) {
 
 // updateRoomDetailsCSV updates the roomDetails.csv file with newly added rooms
 func updateRoomDetailsCSV(newRooms []details.Data) error {
-	// Create output directory if it doesn't exist
-	if err := os.MkdirAll("./output", 0755); err != nil {
+	// Get today's date in YYYY-MM-DD format
+	todayDate := time.Now().Format("2006-01-02")
+
+	// Create output directory with today's date if it doesn't exist
+	outputDir := fmt.Sprintf("./output/%s", todayDate)
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("error creating output directory: %w", err)
 	}
 
-	filePath := "./output/rooms_details.csv"
+	filePath := fmt.Sprintf("%s/rooms_details.csv", outputDir)
 
 	// Filter out rooms that already exist using our global map
 	var uniqueNewRooms []details.Data
@@ -238,7 +275,7 @@ func updateRoomDetailsCSV(newRooms []details.Data) error {
 
 	// Create a backup of the original file if it exists
 	if _, err := os.Stat(filePath); err == nil {
-		backupFile := fmt.Sprintf("./output/rooms_details_backup_%s.csv", time.Now().Format("20060102_150405"))
+		backupFile := fmt.Sprintf("%s/rooms_details_backup_%s.csv", outputDir, time.Now().Format("20060102_150405"))
 		if err := copyFile(filePath, backupFile); err != nil {
 			log.Printf("Error creating backup of rooms_details.csv: %v", err)
 		} else {
@@ -257,7 +294,7 @@ func updateRoomDetailsCSV(newRooms []details.Data) error {
 		return fmt.Errorf("error writing to rooms_details.csv: %w", err)
 	}
 
-	fmt.Printf("Successfully wrote %d rooms to rooms_details.csv\n", len(newRooms))
+	fmt.Printf("Successfully wrote %d rooms to %s/rooms_details.csv\n", len(newRooms), outputDir)
 	return nil
 }
 
@@ -568,15 +605,16 @@ func searchForRooms() {
 	}
 
 	// Save all room details to a JSON file
-	fmt.Printf("\nSaving details for %d rooms to rooms_details.csv\n", len(allRoomDetails))
+	fmt.Printf("\nSaving details for %d rooms to today's date folder\n", len(allRoomDetails))
 
 	// Update the CSV file with the new rooms
 	if err := updateRoomDetailsCSV(allRoomDetails); err != nil {
-		log.Printf("Error updating rooms_details.csv: %v\n", err)
+		log.Printf("Error updating CSV file: %v\n", err)
 		return
 	}
 
-	fmt.Println("Room details saved to rooms_details.csv")
+	todayDate := time.Now().Format("2006-01-02")
+	fmt.Printf("Room details saved to output/%s/rooms_details.csv\n", todayDate)
 }
 
 func getRoomDetail(roomId int64) {
