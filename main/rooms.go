@@ -23,8 +23,9 @@ import (
 )
 
 var (
-	maxConcurrentSearch = 20
-	maxConcurrentRooms  = 20
+	// Set very low concurrency to avoid rate limiting
+	maxConcurrentSearch = 2 // Reduced from 20
+	maxConcurrentRooms  = 3 // Reduced from 20
 )
 
 var CITIES = []string{
@@ -377,6 +378,18 @@ func searchForRooms() {
 		go func(cityName string) {
 			defer wgCities.Done()
 
+			// Add a significant random delay before acquiring the semaphore
+			minDelay := 5000  // 5 seconds
+			maxDelay := 15000 // 15 seconds
+			
+			// Add some jitter to make the pattern less predictable
+			jitter := rand.Intn(3000) // Up to 3 seconds of additional randomness
+			randomDelay := minDelay + rand.Intn(maxDelay-minDelay) + jitter
+			
+			delaySeconds := float64(randomDelay) / 1000.0
+			log.Printf("City %s: Waiting %.2f seconds before starting search...", cityName, delaySeconds)
+			time.Sleep(time.Duration(randomDelay) * time.Millisecond)
+			
 			// Acquire a semaphore slot
 			searchSemaphore <- struct{}{}
 			defer func() { <-searchSemaphore }()
@@ -515,8 +528,17 @@ func searchForRooms() {
 				return
 			}
 
-			// Add a small random delay to avoid all requests hitting at once
-			time.Sleep(time.Duration(id%100) * time.Millisecond)
+			// Add a significant random delay between requests to avoid rate limiting
+			minDelay := 8000  // 8 seconds
+			maxDelay := 25000 // 25 seconds
+			
+			// Add some jitter to make the pattern less predictable
+			jitter := rand.Intn(3000) // Up to 3 seconds of additional randomness
+			randomDelay := minDelay + rand.Intn(maxDelay-minDelay) + jitter
+			
+			delaySeconds := float64(randomDelay) / 1000.0
+			log.Printf("Room %d: Waiting %.2f seconds before fetching details...", id, delaySeconds)
+			time.Sleep(time.Duration(randomDelay) * time.Millisecond)
 
 			// Create output directory for this room
 			folderPath := fmt.Sprintf("./output/%d", id)

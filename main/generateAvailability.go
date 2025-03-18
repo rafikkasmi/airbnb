@@ -21,7 +21,8 @@ import (
 	"github.com/gocarina/gocsv"
 )
 
-var maxConcurrentAvailability = 20
+// Set a very low concurrency to avoid rate limiting
+var maxConcurrentAvailability = 3
 
 var proxyRotator *utils.ProxyRotator
 
@@ -310,11 +311,17 @@ func GenerateAvailabilityFromCSV() {
 			log.Printf("[%d/%d] Processing room ID: %d\n", index+1, len(records), id)
 			fetchAvailabilityForRoom(id, folderPath)
 
-			// Add a random delay between requests to avoid rate limiting
-			// Random delay between 500ms and 2000ms
-			minDelay := 500
-			maxDelay := 2000
-			randomDelay := minDelay + rand.Intn(maxDelay-minDelay)
+			// Add a significant random delay between requests to avoid rate limiting
+			// Random delay between 10 seconds and 30 seconds
+			minDelay := 10000 // 10 seconds
+			maxDelay := 30000 // 30 seconds
+			
+			// Add some jitter to make the pattern less predictable
+			jitter := rand.Intn(5000) // Up to 5 seconds of additional randomness
+			randomDelay := minDelay + rand.Intn(maxDelay-minDelay) + jitter
+			
+			delaySeconds := float64(randomDelay) / 1000.0
+			log.Printf("Waiting %.2f seconds before next request...", delaySeconds)
 			time.Sleep(time.Duration(randomDelay) * time.Millisecond)
 		}(roomID, i)
 	}
