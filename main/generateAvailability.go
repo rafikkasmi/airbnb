@@ -203,7 +203,7 @@ func fetchAvailabilityForRoom(roomID int64, folderPath string) {
 func GenerateAvailabilityFromCSV() {
 	// Find the most recent date folder
 	csvPath := filepath.Join("output", "rooms_details.csv") // Default fallback path
-	
+
 	entries, err := os.ReadDir("output")
 	if err == nil && len(entries) > 0 {
 		// Filter directories with date format YYYY-MM-DD
@@ -217,15 +217,15 @@ func GenerateAvailabilityFromCSV() {
 				}
 			}
 		}
-		
+
 		// Sort directories by date (newest first)
 		sort.Sort(sort.Reverse(sort.StringSlice(dateDirs)))
-		
+
 		// Check if we found any date directories
 		if len(dateDirs) > 0 {
 			newestDir := dateDirs[0]
 			potentialPath := filepath.Join("output", newestDir, "rooms_details.csv")
-			
+
 			// Check if the file exists in the newest directory
 			if _, err := os.Stat(potentialPath); err == nil {
 				csvPath = potentialPath
@@ -302,7 +302,7 @@ func GenerateAvailabilityFromCSV() {
 
 			// Get today's date in YYYY-MM-DD format
 			todayDate := time.Now().Format("2006-01-02")
-			
+
 			// Create output directory with today's date if it doesn't exist
 			folderPath := filepath.Join("output", todayDate, "rooms", fmt.Sprintf("%d", id))
 			os.MkdirAll(folderPath, 0755)
@@ -315,11 +315,11 @@ func GenerateAvailabilityFromCSV() {
 			// Random delay between 10 seconds and 30 seconds
 			minDelay := 10000 // 10 seconds
 			maxDelay := 30000 // 30 seconds
-			
+
 			// Add some jitter to make the pattern less predictable
 			jitter := rand.Intn(5000) // Up to 5 seconds of additional randomness
 			randomDelay := minDelay + rand.Intn(maxDelay-minDelay) + jitter
-			
+
 			delaySeconds := float64(randomDelay) / 1000.0
 			log.Printf("Waiting %.2f seconds before next request...", delaySeconds)
 			time.Sleep(time.Duration(randomDelay) * time.Millisecond)
