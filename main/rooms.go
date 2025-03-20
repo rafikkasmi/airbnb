@@ -25,8 +25,8 @@ import (
 
 var (
 	// Set very low concurrency to avoid rate limiting
-	maxConcurrentSearch = 2 // Reduced from 20
-	maxConcurrentRooms  = 3 // Reduced from 20
+	maxConcurrentSearch = 10 // Reduced from 20
+	maxConcurrentRooms  = 60 // Reduced from 20
 )
 
 var CITIES = []string{
@@ -362,22 +362,25 @@ func searchForRooms() {
 	// List of cities to search in
 	Cities := CITIES
 
-	fmt.Printf("Starting asynchronous search for rooms in %d cities...\n", len(Cities))
+	fmt.Printf("Starting search for rooms in %d cities (max %d concurrent)...\n", len(Cities), maxConcurrentSearch)
 
 	// Create channels for search results and synchronization
-	citiesResultsChan := make(chan citySearchResult)
+	citiesResultsChan := make(chan citySearchResult, len(Cities))
 	var wgCities sync.WaitGroup
 
-	// Set up a worker pool with a maximum of 5 concurrent searches
+	// Set up a worker pool with a maximum of concurrent searches
 	maxConcurrentSearches := maxConcurrentSearch
 	searchSemaphore := make(chan struct{}, maxConcurrentSearches)
 
-	// Launch a goroutine for each city search
+	// Launch a goroutine for each city search, but acquire semaphore first
 	for _, city := range Cities {
+		// Acquire semaphore before launching goroutine to ensure we respect the concurrency limit
+		searchSemaphore <- struct{}{} // Acquire semaphore before launching goroutine
 		wgCities.Add(1)
 
 		go func(cityName string) {
 			defer wgCities.Done()
+			defer func() { <-searchSemaphore }() // Release semaphore when done
 
 			// Add a significant random delay before acquiring the semaphore
 			minDelay := 5000  // 5 seconds
@@ -390,10 +393,6 @@ func searchForRooms() {
 			delaySeconds := float64(randomDelay) / 1000.0
 			log.Printf("City %s: Waiting %.2f seconds before starting search...", cityName, delaySeconds)
 			time.Sleep(time.Duration(randomDelay) * time.Millisecond)
-
-			// Acquire a semaphore slot
-			searchSemaphore <- struct{}{}
-			defer func() { <-searchSemaphore }()
 
 			fmt.Printf("Searching for rooms in %s...\n", cityName)
 

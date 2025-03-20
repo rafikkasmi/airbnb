@@ -22,7 +22,7 @@ import (
 )
 
 // Set a very low concurrency to avoid rate limiting
-var maxConcurrentReviews = 3
+var maxConcurrentReviews = 50
 var proxyRotator *utils.ProxyRotator
 
 var client gobnb.Client
