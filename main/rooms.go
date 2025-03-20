@@ -26,7 +26,7 @@ import (
 var (
 	// Set very low concurrency to avoid rate limiting
 	maxConcurrentSearch = 10 // Reduced from 20
-	maxConcurrentRooms  = 60 // Reduced from 20
+	maxConcurrentRooms  = 30 // Reduced from 20
 )
 
 var CITIES = []string{

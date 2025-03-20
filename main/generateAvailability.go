@@ -22,7 +22,7 @@ import (
 )
 
 // Set a very low concurrency to avoid rate limiting
-var maxConcurrentAvailability = 50
+var maxConcurrentAvailability = 30
 
 var proxyRotator *utils.ProxyRotator
 
